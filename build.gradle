@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+}
+
+group = 'pl.edu.icm.heap'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'pl.edu.icm.pcj:pcj:5.3.3'
+    annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.3'
+}
+
+test {
+    useJUnitPlatform()
+}
