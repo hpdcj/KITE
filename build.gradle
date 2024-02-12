@@ -14,6 +14,11 @@ dependencies {
     annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.3'
 }
 
-test {
-    useJUnitPlatform()
+tasks.register('copyDependencies', Copy) {
+    group "build"
+    description "Copy dependencies into build directory"
+
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir("libs")
 }
+jar.finalizedBy('copyDependencies')
