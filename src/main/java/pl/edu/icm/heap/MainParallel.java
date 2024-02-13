@@ -79,7 +79,9 @@ public class MainParallel {
                             if (line == null) {
                                 break;
                             }
-                            sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);//.delete(0, sb.length() - SHINGLETON_LENGTH + 1);
+                            String lastChars = sb.substring(sb.length() - SHINGLETON_LENGTH + 1);
+                            sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
+                            sb.append(lastChars);
                         }
                         input.readLine(); // skip line
                         input.readLine(); // skip line
