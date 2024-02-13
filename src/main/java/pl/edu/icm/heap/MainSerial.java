@@ -32,8 +32,9 @@ public class MainSerial {
         }
         System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
 
-        for (String filename : args) {
-            System.err.println("Processing '" + filename + "' file...");
+        for (int argc = 0; argc < args.length; ++argc) {
+            String filename = args[argc];
+            System.err.println("Processing (" + (argc + 1) + " of " + args.length + ") '" + filename + "' file...");
             try (BufferedReader input = new BufferedReader(
                     new InputStreamReader(
                             new GZIPInputStream(
@@ -52,8 +53,8 @@ public class MainSerial {
                         sb.append(line);
                     }
                     if (line == null || sb.length() >= PROCESSING_BUFFER_KB * 1024) {
-                        for (int i = 0; i <= sb.length() - SHINGLETON_LENGTH; ++i) {
-                            String shinglet = sb.substring(i, i + SHINGLETON_LENGTH);
+                        for (int index = 0; index <= sb.length() - SHINGLETON_LENGTH; ++index) {
+                            String shinglet = sb.substring(index, index + SHINGLETON_LENGTH);
                             if (hpvViruses.hasShinglet(shinglet)) {
                                 shinglets.add(shinglet);
                             }

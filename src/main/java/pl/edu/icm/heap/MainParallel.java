@@ -6,8 +6,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.zip.GZIPInputStream;
 
 public class MainParallel {
@@ -34,9 +40,10 @@ public class MainParallel {
         System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
 
         try (ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE)) {
-            for (String filename : args) {
+            for (int argc = 0; argc < args.length; ++argc) {
+                String filename = args[argc];
                 List<Future<?>> shingletsFutures = new ArrayList<>();
-                System.err.println("Processing '" + filename + "' file...");
+                System.err.println("Processing (" + (argc + 1) + " of " + args.length + ") '" + filename + "' file...");
                 try (BufferedReader input = new BufferedReader(
                         new InputStreamReader(
                                 new GZIPInputStream(
@@ -59,8 +66,8 @@ public class MainParallel {
                             StringBuilder _sb = sb;
                             shingletsFutures.add(executor.submit(() -> {
                                 Set<String> localShinglets = new HashSet<>();
-                                for (int i = 0; i <= _sb.length() - SHINGLETON_LENGTH; ++i) {
-                                    String shinglet = _sb.substring(i, i + SHINGLETON_LENGTH);
+                                for (int index = 0; index <= _sb.length() - SHINGLETON_LENGTH; ++index) {
+                                    String shinglet = _sb.substring(index, index + SHINGLETON_LENGTH);
                                     if (hpvViruses.hasShinglet(shinglet)) {
                                         localShinglets.add(shinglet);
                                     }
