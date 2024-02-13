@@ -3,7 +3,6 @@ package pl.edu.icm.heap;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.util.*;
 
 public class HpvViruses {
@@ -11,7 +10,7 @@ public class HpvViruses {
     private final Map<String, Set<String>> hpvViruses;
     private final Set<String> superset;
 
-    public HpvViruses() throws IOException {
+    public HpvViruses(int shingletonLength) throws IOException {
         hpvNames = new ArrayList<>();
         hpvViruses = new HashMap<>();
         try (BufferedReader br = new BufferedReader(
@@ -25,8 +24,8 @@ public class HpvViruses {
                 if (line == null || line.startsWith(">")) {
                     if (!virus.isEmpty()) {
                         Set<String> generator = new HashSet<>();
-                        for (int i = 0; i < virus.length() - Main.SHINGLETON_LENGTH; ++i) {
-                            generator.add(virus.substring(i, i + Main.SHINGLETON_LENGTH));
+                        for (int i = 0; i < virus.length() - shingletonLength; ++i) {
+                            generator.add(virus.substring(i, i + shingletonLength));
                         }
                         hpvNames.add(name);
                         hpvViruses.put(name, Collections.unmodifiableSet(generator));
