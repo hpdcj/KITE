@@ -76,7 +76,7 @@ public class PcjMain implements StartPoint {
 
             System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), filenames.size(), filenames);
 
-            System.err.printf("[%s] Reading HPV virus file...", getTimeAndDate());
+            System.err.printf("[%s] Reading HPV virus file by all threads...", getTimeAndDate());
             System.err.flush();
         }
 
@@ -103,6 +103,8 @@ public class PcjMain implements StartPoint {
             processFile(filename);
         }
         executor.shutdown();
+        System.err.printf("[%s] Thread-%d finished processing all its files after %.9f%n",
+                getTimeAndDate(), PCJ.myId(), Duration.between(startTime, Instant.now()).toNanos() / 1e9);
 
         PCJ.barrier();
         if (PCJ.myId() == 0) {
@@ -113,7 +115,8 @@ public class PcjMain implements StartPoint {
 
 
     private void processFile(String filename) {
-        System.err.printf("[%s] Thread %d is processing '%s' file...%n",
+        Instant fileStartTime = Instant.now();
+        System.err.printf("[%s] Thread-%d is processing '%s' file...%n",
                 getTimeAndDate(), PCJ.myId(), filename);
 
         List<Future<?>> shingletsFutures = new ArrayList<>();
@@ -171,8 +174,14 @@ public class PcjMain implements StartPoint {
                 result.append(String.format("%-10s\t%.6f\t", max.name(), max.value()));
             }
             PCJ.asyncAt(0, () -> System.out.printf("%s%s%n", result, filename));
+            Instant.now();
+            System.err.printf("[%s] Thread-%d finished processing '%s' file after %.9f%n",
+                    getTimeAndDate(), PCJ.myId(), filename, Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9);
         } catch (Exception e) {
-            System.err.printf("[%s] Exception while processing '%s': %s%n", getTimeAndDate(), filename, e);
+            System.err.printf("[%s] Exception after %.9f while processing '%s' by Thread-%d: %s%n",
+                    getTimeAndDate(),
+                    Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9,
+                    filename, PCJ.myId(), e);
             e.printStackTrace(System.err);
             shingletsFutures.forEach(f -> f.cancel(false));
         }
