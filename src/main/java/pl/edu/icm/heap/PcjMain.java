@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +35,6 @@ public class PcjMain implements StartPoint {
 
     @Storage
     enum Vars {
-        hpvViruses,
         filenames
     }
 
@@ -64,27 +65,26 @@ public class PcjMain implements StartPoint {
         int THREAD_POOL_SIZE = Integer.parseInt(PCJ.getProperty("threadPoolSize"));
 
         if (PCJ.myId() == 0) {
-            System.err.println("shingletonLength = " + SHINGLETON_LENGTH);
-            System.err.println("gzipBuffer = " + GZIP_BUFFER_KB);
-            System.err.println("readerBuffer = " + READER_BUFFER_KB);
-            System.err.println("processingBuffer = " + PROCESSING_BUFFER_KB);
-            System.err.println("threadPoolSize = " + THREAD_POOL_SIZE);
+            System.err.printf("[%s] shingletonLength = %d%n", getTimeAndDate(), SHINGLETON_LENGTH);
+            System.err.printf("[%s] gzipBuffer = %d%n", getTimeAndDate(), GZIP_BUFFER_KB);
+            System.err.printf("[%s] readerBuffer = %d%n", getTimeAndDate(), READER_BUFFER_KB);
+            System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
+            System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), THREAD_POOL_SIZE);
 
             filenames = new ArrayDeque<>();
             filenames.addAll(Arrays.asList(PCJ.getProperty("files", "").split(File.pathSeparator)));
 
-            System.err.println("Files to process: " + filenames.size());
+            System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), filenames.size(), filenames);
 
-            System.err.print("Reading HPV virus file...");
+            System.err.printf("[%s] Reading HPV virus file...", getTimeAndDate());
             System.err.flush();
-
-            hpvViruses = new HpvViruses(SHINGLETON_LENGTH);
-            PCJ.broadcast(hpvViruses, Vars.hpvViruses);
-
-            System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
-            System.err.printf("Loaded %d HPV viruses: %s\n", hpvViruses.count(), Arrays.toString(hpvViruses.getNames()));
         }
-        PCJ.waitFor(Vars.hpvViruses);
+
+        hpvViruses = new HpvViruses(SHINGLETON_LENGTH);
+        if (PCJ.myId() == 0) {
+            System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
+            System.err.printf("[%s] Loaded %d HPV viruses: %s%n", getTimeAndDate(), hpvViruses.count(), Arrays.toString(hpvViruses.getNames()));
+        }
 
         executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
@@ -107,13 +107,14 @@ public class PcjMain implements StartPoint {
         PCJ.barrier();
         if (PCJ.myId() == 0) {
             long timeElapsed = Duration.between(startTime, Instant.now()).toNanos();
-            System.out.printf("Total time: %.9f%n", timeElapsed / 1e9);
+            System.err.printf("[%s] Total time: %.9f%n", getTimeAndDate(), timeElapsed / 1e9);
         }
     }
 
 
     private void processFile(String filename) {
-        System.err.println("Thread " + PCJ.myId() + " is processing " + filename + "' file...");
+        System.err.printf("[%s] Thread %d is processing '%s' file...%n",
+                getTimeAndDate(), PCJ.myId(), filename);
 
         List<Future<?>> shingletsFutures = new ArrayList<>();
         try (BufferedReader input = new BufferedReader(
@@ -169,11 +170,15 @@ public class PcjMain implements StartPoint {
                 }
                 result.append(String.format("%-10s\t%.6f\t", max.name(), max.value()));
             }
-            System.out.printf("%s%s%n", result, filename);
+            PCJ.asyncAt(0, () -> System.out.printf("%s%s%n", result, filename));
         } catch (Exception e) {
-            System.err.println(" exception: " + e);
+            System.err.printf("[%s] Exception while processing '%s': %s%n", getTimeAndDate(), filename, e);
             e.printStackTrace(System.err);
             shingletsFutures.forEach(f -> f.cancel(false));
         }
+    }
+
+    private static String getTimeAndDate() {
+        return java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS"));
     }
 }
