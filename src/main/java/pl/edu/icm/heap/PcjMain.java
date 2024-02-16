@@ -44,7 +44,7 @@ public class PcjMain implements StartPoint {
 
     @Storage
     enum Vars {
-        hpvViruses,
+        //        hpvViruses,
         filenames
     }
 
@@ -88,33 +88,31 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
             System.err.printf("[%s] hpvVirusesPath = %s%n", getTimeAndDate(), hpvVirusesPath.isEmpty() ? "<provided>" : hpvVirusesPath);
 
-            System.err.printf("[%s] Reading HPV viruses file...", getTimeAndDate());
-            System.err.flush();
-
-            try (InputStream hpvVirusesInputStream = hpvVirusesPath.isEmpty()
-                    ? HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta")
-                    : Files.newInputStream(Path.of(hpvVirusesPath))) {
-                hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLETON_LENGTH);
-            } catch (IOException e) {
-                System.err.printf("[%s] Exception while reading HPV viruses file by Thread-%d: %s. Exiting!%n",
-                        getTimeAndDate(), PCJ.myId(), e);
-                e.printStackTrace(System.err);
-                System.exit(1);
-            }
-            PCJ.asyncBroadcast(hpvViruses, Vars.hpvViruses);
-
-            if (PCJ.myId() == 0) {
-                System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
-                System.err.printf("[%s] Loaded %d HPV viruses: %s%n", getTimeAndDate(), hpvViruses.count(), Arrays.toString(hpvViruses.getNames()));
-            }
-
             filenames = new ArrayDeque<>();
             filenames.addAll(Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
                     .filter(s -> !s.isEmpty())
                     .toList());
             System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), filenames.size(), filenames);
+
+            System.err.printf("[%s] Reading HPV viruses file by all threads...", getTimeAndDate());
+            System.err.flush();
         }
-        PCJ.waitFor(Vars.hpvViruses);
+
+        try (InputStream hpvVirusesInputStream = hpvVirusesPath.isEmpty()
+                ? HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta")
+                : Files.newInputStream(Path.of(hpvVirusesPath))) {
+            hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLETON_LENGTH);
+        } catch (IOException e) {
+            System.err.printf("[%s] Exception while reading HPV viruses file by Thread-%d: %s. Exiting!%n",
+                    getTimeAndDate(), PCJ.myId(), e);
+            System.exit(1);
+        }
+
+        if (PCJ.myId() == 0) {
+            System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
+            System.err.printf("[%s] Loaded %d HPV viruses: %s%n", getTimeAndDate(), hpvViruses.count(), Arrays.toString(hpvViruses.getNames()));
+        }
+
         PCJ.barrier();
 
         executor = Executors.newFixedThreadPool(threadPoolSize);
