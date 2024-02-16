@@ -2,6 +2,7 @@ package pl.edu.icm.heap;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,13 +13,11 @@ public class HpvViruses implements Serializable {
     private final Map<String, Set<String>> hpvViruses;
     transient private final Set<String> superset;
 
-    public HpvViruses(int shingletonLength) throws IOException {
+    public HpvViruses(InputStream inputStream, int shingletonLength) throws IOException {
         hpvNames = new ArrayList<>();
         hpvViruses = new HashMap<>();
         try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(
-                        Objects.requireNonNull(
-                                HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta"))))) {
+                new InputStreamReader(inputStream))) {
             String name = "";
             StringBuilder virus = new StringBuilder();
             while (true) {

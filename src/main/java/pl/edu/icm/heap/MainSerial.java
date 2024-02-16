@@ -25,7 +25,7 @@ public class MainSerial {
 
         HpvViruses hpvViruses = null;
         try {
-            hpvViruses = new HpvViruses(SHINGLETON_LENGTH);
+            hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta"), SHINGLETON_LENGTH);
         } catch (IOException e) {
             System.err.println("Exception while reading hpv viruses file: " + e);
             System.exit(1);
