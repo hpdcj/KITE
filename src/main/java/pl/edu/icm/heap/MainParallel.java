@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.zip.GZIPInputStream;
 
 public class MainParallel {
@@ -22,6 +23,11 @@ public class MainParallel {
     private static final int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (32 * 1024)));
     private static final int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (16 * 1024)));
     private static final int THREAD_POOL_SIZE = Integer.parseInt(System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()));
+
+    private static final LongAdder totalShingletsTime = new LongAdder();
+    private static final LongAdder totalOnlyShingletsTime = new LongAdder();
+    private static final LongAdder totalReadingTime = new LongAdder();
+    private static final LongAdder totalCrosscheckTime = new LongAdder();
 
     public static void main(String[] args) throws IOException {
         System.err.println("SHINGLETON_LENGTH = " + SHINGLETON_LENGTH);
@@ -42,14 +48,16 @@ public class MainParallel {
         try (ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE)) {
             for (int argc = 0; argc < args.length; ++argc) {
                 String filename = args[argc];
-                List<Future<?>> shingletsFutures = new ArrayList<>();
                 System.err.println("Processing (" + (argc + 1) + " of " + args.length + ") '" + filename + "' file...");
+                List<Future<?>> shingletsFutures = new ArrayList<>();
                 try (BufferedReader input = new BufferedReader(
                         new InputStreamReader(
                                 new GZIPInputStream(
                                         new FileInputStream(filename), GZIP_BUFFER_KB * 1024)), READER_BUFFER_KB * 1024)
                 ) {
-                    Instant readingTime = Instant.now();
+                    Instant readingIstant = Instant.now();
+                    Instant shingletsInstant = null;
+
                     System.err.print("\treading... ");
                     System.err.flush();
 
@@ -64,6 +72,9 @@ public class MainParallel {
                         }
                         if (line == null || sb.length() >= PROCESSING_BUFFER_KB * 1024) {
                             StringBuilder _sb = sb;
+                            if (shingletsInstant == null) {
+                                shingletsInstant = Instant.now();
+                            }
                             shingletsFutures.add(executor.submit(() -> {
                                 Set<String> localShinglets = new HashSet<>();
                                 for (int index = 0; index <= _sb.length() - SHINGLETON_LENGTH; ++index) {
@@ -87,17 +98,22 @@ public class MainParallel {
                         input.readLine(); // skip line
                         input.readLine(); // skip line
                     }
-                    System.err.printf(" takes %.9f%n", Duration.between(readingTime, Instant.now()).toNanos() / 1e9);
+                    long readingTime = Duration.between(readingIstant, Instant.now()).toNanos();
+                    System.err.printf(" takes %.9f%n", readingTime / 1e9);
 
-                    Instant shingletsTime = Instant.now();
+                    Instant onlyShingletsInstant = Instant.now();
                     System.err.print("\tshinglets... ");
                     System.err.flush();
                     for (Future<?> f : shingletsFutures) {
                         f.get();
                     }
-                    System.err.printf(" takes %.9f%n", Duration.between(shingletsTime, Instant.now()).toNanos() / 1e9);
+                    Instant endShinglesInstant = Instant.now();
+                    long onlyShingletsTime = Duration.between(onlyShingletsInstant, endShinglesInstant).toNanos();
+                    long shingletsTime = Duration.between(shingletsInstant, endShinglesInstant).toNanos();
+                    System.err.printf(" takes %.9f (%.9f)%n", onlyShingletsTime / 1e9,
+                            shingletsTime / 1e9);
 
-                    Instant crosscheckTime = Instant.now();
+                    Instant crosscheckInstant = Instant.now();
                     System.err.print("\tcrosscheck... ");
                     System.err.flush();
 
@@ -110,18 +126,27 @@ public class MainParallel {
                         }
                         result.append(String.format("%-10s\t%.6f\t", max.name(), max.value()));
                     }
-                    System.err.printf(" takes %.9f%n", Duration.between(crosscheckTime, Instant.now()).toNanos() / 1e9);
+                    long crosscheckTime = Duration.between(crosscheckInstant, Instant.now()).toNanos();
+                    System.err.printf(" takes %.9f%n", crosscheckTime / 1e9);
 
                     System.out.printf("%s%s%n", result, filename);
+                    totalReadingTime.add(readingTime);
+                    totalShingletsTime.add(shingletsTime);
+                    totalOnlyShingletsTime.add(onlyShingletsTime);
+                    totalCrosscheckTime.add(crosscheckTime);
                 } catch (Exception e) {
                     System.err.println(" exception: " + e);
                     e.printStackTrace(System.err);
-                    shingletsFutures.forEach(f -> f.cancel(false));
+                    shingletsFutures.forEach(f -> f.cancel(true));
                 }
             }
         }
 
         long timeElapsed = Duration.between(startTime, Instant.now()).toNanos();
-        System.out.printf("Total time: %.9f%n", timeElapsed / 1e9);
+        System.out.printf("Total time: %.9f (reading: %.9f, shinglets: %.9f, only shinglets: %.9f, crosscheck: %.9f)%n",
+                timeElapsed / 1e9,
+                totalReadingTime.longValue() / 1e9, totalShingletsTime.longValue() / 1e9,
+                totalOnlyShingletsTime.longValue() / 1e9, totalCrosscheckTime.longValue() / 1e9
+        );
     }
 }
