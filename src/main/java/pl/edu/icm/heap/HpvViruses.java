@@ -13,7 +13,7 @@ public class HpvViruses implements Serializable {
     private final Map<String, Set<String>> hpvViruses;
     transient private final Set<String> superset;
 
-    public HpvViruses(InputStream inputStream, int shingletonLength) throws IOException {
+    public HpvViruses(InputStream inputStream, int shingleLength) throws IOException {
         hpvNames = new ArrayList<>();
         hpvViruses = new HashMap<>();
         try (BufferedReader br = new BufferedReader(
@@ -25,8 +25,8 @@ public class HpvViruses implements Serializable {
                 if (line == null || line.startsWith(">")) {
                     if (!virus.isEmpty()) {
                         Set<String> generator = new HashSet<>();
-                        for (int i = 0; i < virus.length() - shingletonLength; ++i) {
-                            generator.add(virus.substring(i, i + shingletonLength));
+                        for (int i = 0; i < virus.length() - shingleLength; ++i) {
+                            generator.add(virus.substring(i, i + shingleLength));
                         }
                         hpvNames.add(name);
                         hpvViruses.put(name, Collections.unmodifiableSet(generator));
@@ -70,20 +70,20 @@ public class HpvViruses implements Serializable {
         return hpvNames.toArray(new String[0]);
     }
 
-    public boolean hasShinglet(String shinglet) {
-        return superset.contains(shinglet);
+    public boolean hasShingle(String shingle) {
+        return superset.contains(shingle);
     }
 
-    public PriorityQueue<CrosscheckResult> crosscheck(Set<String> shinglets) {
+    public PriorityQueue<CrosscheckResult> crosscheck(Set<String> shingles) {
         PriorityQueue<CrosscheckResult> priorityQueue = new PriorityQueue<>((v1, v2) -> {
             int value = Double.compare(v1.value(), v2.value());
             if (value == 0) return v1.name().compareTo(v2.name());
             return -value;
         });
         for (String hpvName : hpvNames) {
-            Set<String> hpvShinglets = hpvViruses.get(hpvName);
-            long intersectionSize = shinglets.stream().filter(hpvShinglets::contains).count();
-            double index = (double) intersectionSize / hpvShinglets.size();
+            Set<String> hpvShingles = hpvViruses.get(hpvName);
+            long intersectionSize = shingles.stream().filter(hpvShingles::contains).count();
+            double index = (double) intersectionSize / hpvShingles.size();
             priorityQueue.add(new CrosscheckResult(hpvName, index));
         }
         return priorityQueue;

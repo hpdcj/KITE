@@ -33,7 +33,7 @@ import java.util.zip.GZIPInputStream;
 
 @RegisterStorage
 public class PcjMain implements StartPoint {
-    private int SHINGLETON_LENGTH = Integer.parseInt(System.getProperty("shingletonLength", "" + (18)));
+    private int SHINGLE_LENGTH = Integer.parseInt(System.getProperty("shingleLength", "" + (18)));
     private int GZIP_BUFFER_KB = Integer.parseInt(System.getProperty("gzipBuffer", "" + (16 * 1024)));
     private int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (32 * 1024)));
     private int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (16 * 1024)));
@@ -54,7 +54,7 @@ public class PcjMain implements StartPoint {
         }
 
         ExecutionBuilder builder = PCJ.executionBuilder(PcjMain.class)
-                .addProperty("shingletonLength", System.getProperty("shingletonLength", "" + (18)))
+                .addProperty("shingleLength", System.getProperty("shingleLength", "" + (18)))
                 .addProperty("gzipBuffer", System.getProperty("gzipBuffer", "" + (16 * 1024)))
                 .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (32 * 1024)))
                 .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (16 * 1024)))
@@ -73,7 +73,7 @@ public class PcjMain implements StartPoint {
     @Override
     public void main() throws Throwable {
         Instant startTime = Instant.now();
-        SHINGLETON_LENGTH = Integer.parseInt(PCJ.getProperty("shingletonLength"));
+        SHINGLE_LENGTH = Integer.parseInt(PCJ.getProperty("shingleLength"));
         GZIP_BUFFER_KB = Integer.parseInt(PCJ.getProperty("gzipBuffer"));
         READER_BUFFER_KB = Integer.parseInt(PCJ.getProperty("readerBuffer"));
         PROCESSING_BUFFER_KB = Integer.parseInt(PCJ.getProperty("processingBuffer"));
@@ -81,7 +81,7 @@ public class PcjMain implements StartPoint {
         String hpvVirusesPath = PCJ.getProperty("hpvVirusesPath");
 
         if (PCJ.myId() == 0) {
-            System.err.printf("[%s] shingletonLength = %d%n", getTimeAndDate(), SHINGLETON_LENGTH);
+            System.err.printf("[%s] shingleLength = %d%n", getTimeAndDate(), SHINGLE_LENGTH);
             System.err.printf("[%s] gzipBuffer = %d%n", getTimeAndDate(), GZIP_BUFFER_KB);
             System.err.printf("[%s] readerBuffer = %d%n", getTimeAndDate(), READER_BUFFER_KB);
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
@@ -101,7 +101,7 @@ public class PcjMain implements StartPoint {
         try (InputStream hpvVirusesInputStream = hpvVirusesPath.isEmpty()
                 ? HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta")
                 : Files.newInputStream(Path.of(hpvVirusesPath))) {
-            hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLETON_LENGTH);
+            hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLE_LENGTH);
         } catch (IOException e) {
             System.err.printf("[%s] Exception while reading HPV viruses file by Thread-%d: %s. Exiting!%n",
                     getTimeAndDate(), PCJ.myId(), e);
@@ -148,13 +148,13 @@ public class PcjMain implements StartPoint {
         System.err.printf("[%s] Thread-%d is processing '%s' file...%n",
                 getTimeAndDate(), PCJ.myId(), filename);
 
-        List<Future<?>> shingletsFutures = new ArrayList<>();
+        List<Future<?>> shinglesFutures = new ArrayList<>();
         try (BufferedReader input = new BufferedReader(
                 new InputStreamReader(
                         new GZIPInputStream(
                                 new FileInputStream(filename), GZIP_BUFFER_KB * 1024)), READER_BUFFER_KB * 1024)
         ) {
-            Set<String> shinglets = new HashSet<>();
+            Set<String> shingles = new HashSet<>();
 
             input.readLine(); // skip line
             StringBuilder sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
@@ -165,22 +165,22 @@ public class PcjMain implements StartPoint {
                 }
                 if (line == null || sb.length() >= PROCESSING_BUFFER_KB * 1024) {
                     StringBuilder _sb = sb;
-                    shingletsFutures.add(executor.submit(() -> {
-                        Set<String> localShinglets = new HashSet<>();
-                        for (int index = 0; index <= _sb.length() - SHINGLETON_LENGTH; ++index) {
-                            String shinglet = _sb.substring(index, index + SHINGLETON_LENGTH);
-                            if (hpvViruses.hasShinglet(shinglet)) {
-                                localShinglets.add(shinglet);
+                    shinglesFutures.add(executor.submit(() -> {
+                        Set<String> localShingles = new HashSet<>();
+                        for (int index = 0; index <= _sb.length() - SHINGLE_LENGTH; ++index) {
+                            String shingle = _sb.substring(index, index + SHINGLE_LENGTH);
+                            if (hpvViruses.hasShingle(shingle)) {
+                                localShingles.add(shingle);
                             }
                         }
-                        synchronized (shinglets) {
-                            shinglets.addAll(localShinglets);
+                        synchronized (shingles) {
+                            shingles.addAll(localShingles);
                         }
                     }));
                     if (line == null) {
                         break;
                     }
-                    String lastChars = sb.substring(sb.length() - SHINGLETON_LENGTH + 1);
+                    String lastChars = sb.substring(sb.length() - SHINGLE_LENGTH + 1);
                     sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
                     sb.append(lastChars);
                 }
@@ -189,12 +189,12 @@ public class PcjMain implements StartPoint {
                 input.readLine(); // skip line
             }
 
-            for (Future<?> f : shingletsFutures) {
+            for (Future<?> f : shinglesFutures) {
                 f.get();
             }
 
             StringBuilder result = new StringBuilder();
-            PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shinglets);
+            PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shingles);
             for (int i = 0; i < 3; ++i) {
                 HpvViruses.CrosscheckResult max = resultsPQ.poll();
                 if (max == null) {
@@ -212,7 +212,7 @@ public class PcjMain implements StartPoint {
                     Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9,
                     filename, PCJ.myId(), e);
             e.printStackTrace(System.err);
-            shingletsFutures.forEach(f -> f.cancel(false));
+            shinglesFutures.forEach(f -> f.cancel(false));
         }
     }
 

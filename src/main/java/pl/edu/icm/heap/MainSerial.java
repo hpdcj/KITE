@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 public class MainSerial {
-    private static final int SHINGLETON_LENGTH = Integer.parseInt(System.getProperty("shingletonLength", "" + (18)));
+    private static final int SHINGLE_LENGTH = Integer.parseInt(System.getProperty("shingleLength", "" + (18)));
     private static final int GZIP_BUFFER_KB = Integer.parseInt(System.getProperty("gzipBuffer", "" + (16 * 1024)));
     private static final int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (32 * 1024)));
     private static final int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (16 * 1024)));
@@ -25,7 +25,7 @@ public class MainSerial {
 
         HpvViruses hpvViruses = null;
         try {
-            hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta"), SHINGLETON_LENGTH);
+            hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta"), SHINGLE_LENGTH);
         } catch (IOException e) {
             System.err.println("Exception while reading hpv viruses file: " + e);
             System.exit(1);
@@ -44,7 +44,7 @@ public class MainSerial {
                 System.err.print("\treading... ");
                 System.err.flush();
 
-                Set<String> shinglets = new HashSet<>();
+                Set<String> shingles = new HashSet<>();
                 input.readLine(); // skip line
                 StringBuilder sb = new StringBuilder();
                 while (true) {
@@ -53,16 +53,16 @@ public class MainSerial {
                         sb.append(line);
                     }
                     if (line == null || sb.length() >= PROCESSING_BUFFER_KB * 1024) {
-                        for (int index = 0; index <= sb.length() - SHINGLETON_LENGTH; ++index) {
-                            String shinglet = sb.substring(index, index + SHINGLETON_LENGTH);
-                            if (hpvViruses.hasShinglet(shinglet)) {
-                                shinglets.add(shinglet);
+                        for (int index = 0; index <= sb.length() - SHINGLE_LENGTH; ++index) {
+                            String shingle = sb.substring(index, index + SHINGLE_LENGTH);
+                            if (hpvViruses.hasShingle(shingle)) {
+                                shingles.add(shingle);
                             }
                         }
                         if (line == null) {
                             break;
                         }
-                        sb.delete(0, sb.length() - SHINGLETON_LENGTH + 1);
+                        sb.delete(0, sb.length() - SHINGLE_LENGTH + 1);
                     }
                     input.readLine(); // skip line
                     input.readLine(); // skip line
@@ -76,7 +76,7 @@ public class MainSerial {
                 Instant crosscheckTime = Instant.now();
 
                 StringBuilder result = new StringBuilder();
-                PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shinglets);
+                PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shingles);
                 for (int i = 0; i < 3; ++i) {
                     HpvViruses.CrosscheckResult max = resultsPQ.poll();
                     if (max == null) {
