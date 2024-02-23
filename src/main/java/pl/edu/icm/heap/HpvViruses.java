@@ -75,11 +75,15 @@ public class HpvViruses implements Serializable {
     }
 
     public PriorityQueue<CrosscheckResult> crosscheck(Set<String> shingles) {
-        PriorityQueue<CrosscheckResult> priorityQueue = new PriorityQueue<>((v1, v2) -> {
+        Comparator<CrosscheckResult> crosscheckResultComparator
+                = (Comparator<CrosscheckResult> & Serializable) (v1, v2) -> {
             int value = Double.compare(v1.value(), v2.value());
-            if (value == 0) return v1.name().compareTo(v2.name());
+            if (value == 0) {
+                return v1.name().compareTo(v2.name());
+            }
             return -value;
-        });
+        };
+        PriorityQueue<CrosscheckResult> priorityQueue = new PriorityQueue<>(crosscheckResultComparator);
         for (String hpvName : hpvNames) {
             Set<String> hpvShingles = hpvViruses.get(hpvName);
             long intersectionSize = shingles.stream().filter(hpvShingles::contains).count();

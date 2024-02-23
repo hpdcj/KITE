@@ -7,11 +7,13 @@ import org.pcj.StartPoint;
 import org.pcj.Storage;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -33,10 +35,11 @@ import java.util.zip.GZIPInputStream;
 
 @RegisterStorage
 public class PcjMain implements StartPoint {
-    private int SHINGLE_LENGTH = Integer.parseInt(System.getProperty("shingleLength", "" + (18)));
-    private int GZIP_BUFFER_KB = Integer.parseInt(System.getProperty("gzipBuffer", "" + (16 * 1024)));
-    private int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (32 * 1024)));
-    private int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (16 * 1024)));
+    private int SHINGLE_LENGTH;
+    private int GZIP_BUFFER_KB;
+    private int READER_BUFFER_KB;
+    private int PROCESSING_BUFFER_KB;
+    private int OUTPUT_HPV_COUNT;
     private ExecutorService executor;
     private HpvViruses hpvViruses;
     @SuppressWarnings("serializable")
@@ -50,7 +53,7 @@ public class PcjMain implements StartPoint {
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
-            System.err.println("Give filenames as arguments!");
+            System.err.println("Give filenames (type: .fq.gz) as arguments!");
         }
 
         ExecutionBuilder builder = PCJ.executionBuilder(PcjMain.class)
@@ -60,6 +63,7 @@ public class PcjMain implements StartPoint {
                 .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (16 * 1024)))
                 .addProperty("threadPoolSize", System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()))
                 .addProperty("hpvVirusesPath", System.getProperty("hpvVirusesPath", ""))
+                .addProperty("outputHpvCount", System.getProperty("outputHpvCount", "" + (3)))
                 .addProperty("files", String.join(File.pathSeparator, args))
                 .addNodes(new File(System.getProperty("nodesFile", "nodes.txt")));
 
@@ -77,6 +81,7 @@ public class PcjMain implements StartPoint {
         GZIP_BUFFER_KB = Integer.parseInt(PCJ.getProperty("gzipBuffer"));
         READER_BUFFER_KB = Integer.parseInt(PCJ.getProperty("readerBuffer"));
         PROCESSING_BUFFER_KB = Integer.parseInt(PCJ.getProperty("processingBuffer"));
+        OUTPUT_HPV_COUNT = Integer.parseInt(PCJ.getProperty("outputHpvCount"));
         int threadPoolSize = Integer.parseInt(PCJ.getProperty("threadPoolSize"));
         String hpvVirusesPath = PCJ.getProperty("hpvVirusesPath");
 
@@ -86,6 +91,7 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] readerBuffer = %d%n", getTimeAndDate(), READER_BUFFER_KB);
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
+            System.err.printf("[%s] outputHpvCount = %d%n", getTimeAndDate(), OUTPUT_HPV_COUNT);
             System.err.printf("[%s] hpvVirusesPath = %s%n", getTimeAndDate(), hpvVirusesPath.isEmpty() ? "<provided>" : hpvVirusesPath);
 
             filenames = new ArrayDeque<>();
@@ -99,8 +105,8 @@ public class PcjMain implements StartPoint {
         }
 
         try (InputStream hpvVirusesInputStream = hpvVirusesPath.isEmpty()
-                ? HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta")
-                : Files.newInputStream(Path.of(hpvVirusesPath))) {
+                                                         ? HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta")
+                                                         : Files.newInputStream(Path.of(hpvVirusesPath))) {
             hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLE_LENGTH);
         } catch (IOException e) {
             System.err.printf("[%s] Exception while reading HPV viruses file by Thread-%d: %s. Exiting!%n",
@@ -195,7 +201,7 @@ public class PcjMain implements StartPoint {
 
             StringBuilder result = new StringBuilder();
             PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shingles);
-            for (int i = 0; i < 3; ++i) {
+            for (int i = 0; (OUTPUT_HPV_COUNT <= 0 || i < OUTPUT_HPV_COUNT) && !resultsPQ.isEmpty(); ++i) {
                 HpvViruses.CrosscheckResult max = resultsPQ.poll();
                 if (max == null) {
                     break;
