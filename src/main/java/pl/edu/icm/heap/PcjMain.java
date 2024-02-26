@@ -7,31 +7,34 @@ import org.pcj.StartPoint;
 import org.pcj.Storage;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 @RegisterStorage
 public class PcjMain implements StartPoint {
@@ -43,12 +46,12 @@ public class PcjMain implements StartPoint {
     private ExecutorService executor;
     private HpvViruses hpvViruses;
     @SuppressWarnings("serializable")
-    private Queue<String> filenames;
+    private Map<String, List<String>> filenameMap;
 
     @Storage
     enum Vars {
         //        hpvViruses,
-        filenames
+        filenameMap
     }
 
     public static void main(String[] args) throws IOException {
@@ -62,8 +65,9 @@ public class PcjMain implements StartPoint {
                 .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (32 * 1024)))
                 .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (16 * 1024)))
                 .addProperty("threadPoolSize", System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()))
-                .addProperty("hpvVirusesPath", System.getProperty("hpvVirusesPath", ""))
                 .addProperty("outputHpvCount", System.getProperty("outputHpvCount", "" + (3)))
+                .addProperty("hpvVirusesPath", System.getProperty("hpvVirusesPath", ""))
+                .addProperty("filesGroupPattern", System.getProperty("filesGroupPattern", ""))
                 .addProperty("files", String.join(File.pathSeparator, args))
                 .addNodes(new File(System.getProperty("nodesFile", "nodes.txt")));
 
@@ -75,7 +79,7 @@ public class PcjMain implements StartPoint {
     }
 
     @Override
-    public void main() throws Throwable {
+    public void main() {
         Instant startTime = Instant.now();
         SHINGLE_LENGTH = Integer.parseInt(PCJ.getProperty("shingleLength"));
         GZIP_BUFFER_KB = Integer.parseInt(PCJ.getProperty("gzipBuffer"));
@@ -84,6 +88,7 @@ public class PcjMain implements StartPoint {
         OUTPUT_HPV_COUNT = Integer.parseInt(PCJ.getProperty("outputHpvCount"));
         int threadPoolSize = Integer.parseInt(PCJ.getProperty("threadPoolSize"));
         String hpvVirusesPath = PCJ.getProperty("hpvVirusesPath");
+        String filesGroupPattern = PCJ.getProperty("filesGroupPattern");
 
         if (PCJ.myId() == 0) {
             System.err.printf("[%s] shingleLength = %d%n", getTimeAndDate(), SHINGLE_LENGTH);
@@ -93,12 +98,31 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
             System.err.printf("[%s] outputHpvCount = %d%n", getTimeAndDate(), OUTPUT_HPV_COUNT);
             System.err.printf("[%s] hpvVirusesPath = %s%n", getTimeAndDate(), hpvVirusesPath.isEmpty() ? "<provided>" : hpvVirusesPath);
+            System.err.printf("[%s] filesGroupPattern = %s%n", getTimeAndDate(), filesGroupPattern);
 
-            filenames = new ArrayDeque<>();
-            filenames.addAll(Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
-                    .filter(s -> !s.isEmpty())
-                    .toList());
-            System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), filenames.size(), filenames);
+            String[] files = PCJ.getProperty("files", "").split(File.pathSeparator);
+            System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), files.length, Arrays.toString(files));
+
+            if (!filesGroupPattern.isEmpty()) {
+
+                Pattern filenamesPattern = Pattern.compile(filesGroupPattern);
+                filenameMap = Arrays.stream(files)
+                        .filter(s -> !s.isEmpty())
+                        .collect(groupingBy(filename -> {
+                            Matcher m = filenamesPattern.matcher(filename);
+                            return m.find() ? m.group() : "";
+                        }, LinkedHashMap::new, toList()));
+                System.err.printf("[%s] File groups to process (%d):%n", getTimeAndDate(), filenameMap.size());
+                for (Map.Entry<String, List<String>> entry : filenameMap.entrySet()) {
+                    System.err.printf("[%s]\t- %s (%d) = %s%n", getTimeAndDate(),
+                            entry.getKey().isEmpty() ? "<none>" : entry.getKey(),
+                            entry.getValue().size(),
+                            entry.getValue());
+                }
+            } else {
+                filenameMap = Arrays.stream(files).filter(s -> !s.isEmpty())
+                        .collect(groupingBy(filename -> filename, LinkedHashMap::new, toList()));
+            }
 
             System.err.printf("[%s] Reading HPV viruses file by all threads...", getTimeAndDate());
             System.err.flush();
@@ -124,18 +148,35 @@ public class PcjMain implements StartPoint {
         executor = Executors.newFixedThreadPool(threadPoolSize);
 
         while (true) {
-            String filename = PCJ.at(0, () -> {
-                Queue<String> filenames = PCJ.localGet(Vars.filenames);
-                synchronized (filenames) {
-                    return filenames.poll();
+            GroupAndFilenames filenamesEntry = PCJ.at(0, () -> {
+                Map<String, List<String>> filenameMap = PCJ.localGet(Vars.filenameMap);
+                synchronized (filenameMap) {
+                    Iterator<Map.Entry<String, List<String>>> iterator = filenameMap.entrySet().iterator();
+                    if (iterator.hasNext()) {
+                        Map.Entry<String, List<String>> entry = iterator.next();
+                        iterator.remove();
+                        return new GroupAndFilenames(entry.getKey(), entry.getValue());
+                    } else {
+                        return null;
+                    }
                 }
             });
 
-            if (filename == null) {
+            if (filenamesEntry == null) {
                 break;
             }
 
-            processFile(filename);
+            Set<String> shingles = new HashSet<>();
+            for (String filename : filenamesEntry.filenames()) {
+                Set<String> fileShingle = processFile(filename);
+                if (!filesGroupPattern.isEmpty()) {
+                    shingles.addAll(fileShingle);
+                }
+            }
+            if (!filesGroupPattern.isEmpty()) {
+                String result = crosscheckShingles("Group:" + filenamesEntry.name(), shingles);
+                PCJ.asyncAt(0, () -> System.out.print(result));
+            }
         }
         executor.shutdown();
         System.err.printf("[%s] Thread-%d finished processing all its files after %.9f%n",
@@ -149,7 +190,9 @@ public class PcjMain implements StartPoint {
     }
 
 
-    private void processFile(String filename) {
+    private Set<String> processFile(String filename) {
+        Set<String> shingles = new HashSet<>();
+
         Instant fileStartTime = Instant.now();
         System.err.printf("[%s] Thread-%d is processing '%s' file...%n",
                 getTimeAndDate(), PCJ.myId(), filename);
@@ -160,8 +203,6 @@ public class PcjMain implements StartPoint {
                         new GZIPInputStream(
                                 new FileInputStream(filename), GZIP_BUFFER_KB * 1024)), READER_BUFFER_KB * 1024)
         ) {
-            Set<String> shingles = new HashSet<>();
-
             input.readLine(); // skip line
             StringBuilder sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
             while (true) {
@@ -199,16 +240,8 @@ public class PcjMain implements StartPoint {
                 f.get();
             }
 
-            StringBuilder result = new StringBuilder();
-            PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shingles);
-            for (int i = 0; (OUTPUT_HPV_COUNT <= 0 || i < OUTPUT_HPV_COUNT) && !resultsPQ.isEmpty(); ++i) {
-                HpvViruses.CrosscheckResult max = resultsPQ.poll();
-                if (max == null) {
-                    break;
-                }
-                result.append(String.format("%-10s\t%.6f\t", max.name(), max.value()));
-            }
-            PCJ.asyncAt(0, () -> System.out.printf("%s%s%n", result, filename));
+            String result = crosscheckShingles(filename, shingles);
+            PCJ.asyncAt(0, () -> System.out.print(result));
             Instant.now();
             System.err.printf("[%s] Thread-%d finished processing '%s' file after %.9f%n",
                     getTimeAndDate(), PCJ.myId(), filename, Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9);
@@ -220,9 +253,26 @@ public class PcjMain implements StartPoint {
             e.printStackTrace(System.err);
             shinglesFutures.forEach(f -> f.cancel(false));
         }
+        return shingles;
+    }
+
+    private String crosscheckShingles(String filename, Set<String> shingles) {
+        StringBuilder result = new StringBuilder();
+        PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shingles);
+        for (int i = 0; (OUTPUT_HPV_COUNT <= 0 || i < OUTPUT_HPV_COUNT) && !resultsPQ.isEmpty(); ++i) {
+            HpvViruses.CrosscheckResult max = resultsPQ.poll();
+            if (max == null) {
+                break;
+            }
+            result.append(String.format("%-10s\t%.6f\t", max.name(), max.value()));
+        }
+        return String.format("%s%s%n", result, filename);
     }
 
     private static String getTimeAndDate() {
         return java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS"));
+    }
+
+    record GroupAndFilenames(String name, List<String> filenames) implements Serializable {
     }
 }
