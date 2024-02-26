@@ -74,6 +74,13 @@ public class HpvViruses implements Serializable {
         return superset.contains(shingle);
     }
 
+    public Set<String> getShingles(String hpvVirusName) throws NoSuchElementException {
+        if (!hpvNames.contains(hpvVirusName)) {
+            throw new NoSuchElementException("Not found: " + hpvVirusName);
+        }
+        return Collections.unmodifiableSet(hpvViruses.get(hpvVirusName));
+    }
+
     public PriorityQueue<CrosscheckResult> crosscheck(Set<String> shingles) {
         Comparator<CrosscheckResult> crosscheckResultComparator
                 = (Comparator<CrosscheckResult> & Serializable) (v1, v2) -> {
@@ -86,11 +93,15 @@ public class HpvViruses implements Serializable {
         PriorityQueue<CrosscheckResult> priorityQueue = new PriorityQueue<>(crosscheckResultComparator);
         for (String hpvName : hpvNames) {
             Set<String> hpvShingles = hpvViruses.get(hpvName);
-            long intersectionSize = shingles.stream().filter(hpvShingles::contains).count();
-            double index = (double) intersectionSize / hpvShingles.size();
+            double index = calculateIndex(shingles, hpvShingles);
             priorityQueue.add(new CrosscheckResult(hpvName, index));
         }
         return priorityQueue;
+    }
+
+    public static double calculateIndex(Set<String> shingles, Set<String> hpvShingles) {
+        long intersectionSize = shingles.stream().filter(hpvShingles::contains).count();
+        return (double) intersectionSize / hpvShingles.size();
     }
 
     public record CrosscheckResult(String name, double value) implements Serializable {

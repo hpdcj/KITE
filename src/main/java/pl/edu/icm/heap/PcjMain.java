@@ -105,8 +105,8 @@ public class PcjMain implements StartPoint {
         }
 
         try (InputStream hpvVirusesInputStream = hpvVirusesPath.isEmpty()
-                                                         ? HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta")
-                                                         : Files.newInputStream(Path.of(hpvVirusesPath))) {
+                ? HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")
+                : Files.newInputStream(Path.of(hpvVirusesPath))) {
             hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLE_LENGTH);
         } catch (IOException e) {
             System.err.printf("[%s] Exception while reading HPV viruses file by Thread-%d: %s. Exiting!%n",

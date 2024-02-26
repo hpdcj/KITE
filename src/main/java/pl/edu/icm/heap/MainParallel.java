@@ -41,7 +41,7 @@ public class MainParallel {
         System.err.print("Reading HPV virus file...");
         System.err.flush();
 
-        HpvViruses hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/hpv_viruses.fasta"), SHINGLE_LENGTH);
+        HpvViruses hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa"), SHINGLE_LENGTH);
 
         System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
 
