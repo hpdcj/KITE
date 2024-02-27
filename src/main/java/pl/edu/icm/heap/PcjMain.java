@@ -46,7 +46,7 @@ public class PcjMain implements StartPoint {
     private int READER_BUFFER_KB;
     private int PROCESSING_BUFFER_KB;
     private int OUTPUT_HPV_COUNT;
-    private Pattern FILES_GROUP_PATTERN;
+    private Pattern filesGroupPattern;
     private ExecutorService executor;
     private HpvViruses hpvViruses;
     @SuppressWarnings({"serializable", "FieldCanBeLocal"})
@@ -98,7 +98,7 @@ public class PcjMain implements StartPoint {
 
         String filesGroupPatternString = PCJ.getProperty("filesGroupPattern");
         if (!filesGroupPatternString.isBlank()) {
-            FILES_GROUP_PATTERN = Pattern.compile(filesGroupPatternString);
+            filesGroupPattern = Pattern.compile(filesGroupPatternString);
         }
 
         if (PCJ.myId() == 0) {
@@ -117,12 +117,12 @@ public class PcjMain implements StartPoint {
                     .toList());
             System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), filenames.size(), filenames);
             System.err.printf("[%s] filesGroupPattern = %s%n", getTimeAndDate(),
-                    FILES_GROUP_PATTERN == null ? "<none>" : FILES_GROUP_PATTERN.pattern());
+                    filesGroupPattern == null ? "<none>" : filesGroupPattern.pattern());
 
-            if (FILES_GROUP_PATTERN != null) {
+            if (filesGroupPattern != null) {
                 shinglesMap = filenames.stream()
                         .map(filename -> {
-                            Matcher m = FILES_GROUP_PATTERN.matcher(filename);
+                            Matcher m = filesGroupPattern.matcher(filename);
                             return m.find() ? m.group() : "";
                         })
                         .collect(groupingBy(groupName -> groupName,
@@ -196,8 +196,8 @@ public class PcjMain implements StartPoint {
             String result = crosscheckShingles(filename, shingles);
             System.out.print(result);
 
-            if (FILES_GROUP_PATTERN != null) {
-                Matcher m = FILES_GROUP_PATTERN.matcher(filename);
+            if (filesGroupPattern != null) {
+                Matcher m = filesGroupPattern.matcher(filename);
                 String groupName = m.find() ? m.group() : "";
 
                 Set<String> groupShingles = PCJ.at(0, () -> {
