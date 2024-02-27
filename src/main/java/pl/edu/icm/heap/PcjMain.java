@@ -194,7 +194,7 @@ public class PcjMain implements StartPoint {
             Set<String> shingles = readShinglesFromFile(filename);
 
             String result = crosscheckShingles(filename, shingles);
-            System.out.print(result);
+            PCJ.asyncAt(0, () -> System.out.print(result));
 
             if (filesGroupPattern != null) {
                 Matcher m = filesGroupPattern.matcher(filename);
@@ -212,7 +212,7 @@ public class PcjMain implements StartPoint {
                 });
                 if (groupShingles != null) {
                     String groupResult = crosscheckShingles(groupName, shingles);
-                    System.out.println(groupResult);
+                    PCJ.asyncAt(0, () -> System.out.println(groupResult));
                 }
             }
 
