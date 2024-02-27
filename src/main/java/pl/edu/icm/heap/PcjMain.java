@@ -1,11 +1,5 @@
 package pl.edu.icm.heap;
 
-import org.pcj.ExecutionBuilder;
-import org.pcj.PCJ;
-import org.pcj.RegisterStorage;
-import org.pcj.StartPoint;
-import org.pcj.Storage;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,23 +12,32 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import org.pcj.ExecutionBuilder;
+import org.pcj.PCJ;
+import org.pcj.RegisterStorage;
+import org.pcj.StartPoint;
+import org.pcj.Storage;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 @RegisterStorage
 public class PcjMain implements StartPoint {
@@ -46,12 +49,16 @@ public class PcjMain implements StartPoint {
     private ExecutorService executor;
     private HpvViruses hpvViruses;
     @SuppressWarnings("serializable")
-    private Map<String, List<String>> filenameMap;
+    private Queue<String> filenames;
+    @SuppressWarnings("serializable")
+    private Map<String, ShinglesAndCount> shinglesMap;
+    private Pattern filesGroupPattern;
 
     @Storage
     enum Vars {
         //        hpvViruses,
-        filenameMap
+        filenames,
+        shinglesMap
     }
 
     public static void main(String[] args) throws IOException {
@@ -88,7 +95,11 @@ public class PcjMain implements StartPoint {
         OUTPUT_HPV_COUNT = Integer.parseInt(PCJ.getProperty("outputHpvCount"));
         int threadPoolSize = Integer.parseInt(PCJ.getProperty("threadPoolSize"));
         String hpvVirusesPath = PCJ.getProperty("hpvVirusesPath");
-        String filesGroupPattern = PCJ.getProperty("filesGroupPattern");
+
+        String filesGroupPatternString = PCJ.getProperty("filesGroupPattern");
+        if (!filesGroupPatternString.isBlank()) {
+            filesGroupPattern = Pattern.compile(filesGroupPatternString);
+        }
 
         if (PCJ.myId() == 0) {
             System.err.printf("[%s] shingleLength = %d%n", getTimeAndDate(), SHINGLE_LENGTH);
@@ -97,31 +108,29 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
             System.err.printf("[%s] outputHpvCount = %d%n", getTimeAndDate(), OUTPUT_HPV_COUNT);
-            System.err.printf("[%s] hpvVirusesPath = %s%n", getTimeAndDate(), hpvVirusesPath.isEmpty() ? "<provided>" : hpvVirusesPath);
-            System.err.printf("[%s] filesGroupPattern = %s%n", getTimeAndDate(), filesGroupPattern);
+            System.err.printf("[%s] hpvVirusesPath = %s%n", getTimeAndDate(), hpvVirusesPath.isEmpty() ? "<bundled>" : hpvVirusesPath);
 
-            String[] files = PCJ.getProperty("files", "").split(File.pathSeparator);
-            System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), files.length, Arrays.toString(files));
+            filenames = new ArrayDeque<>();
+            filenames.addAll(Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
+                    .filter(s -> !s.isBlank())
+                    .toList());
+            System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), filenames.size(), filenames);
+            System.err.printf("[%s] filesGroupPattern = %s%n", getTimeAndDate(), filesGroupPattern == null ? "<none>" : filesGroupPattern.pattern());
 
-            if (!filesGroupPattern.isEmpty()) {
-
-                Pattern filenamesPattern = Pattern.compile(filesGroupPattern);
-                filenameMap = Arrays.stream(files)
-                        .filter(s -> !s.isEmpty())
-                        .collect(groupingBy(filename -> {
-                            Matcher m = filenamesPattern.matcher(filename);
+            if (filesGroupPattern != null) {
+                shinglesMap = filenames.stream()
+                        .map(filename -> {
+                            Matcher m = filesGroupPattern.matcher(filename);
                             return m.find() ? m.group() : "";
-                        }, LinkedHashMap::new, toList()));
-                System.err.printf("[%s] File groups to process (%d):%n", getTimeAndDate(), filenameMap.size());
-                for (Map.Entry<String, List<String>> entry : filenameMap.entrySet()) {
-                    System.err.printf("[%s]\t- %s (%d) = %s%n", getTimeAndDate(),
-                            entry.getKey().isEmpty() ? "<none>" : entry.getKey(),
-                            entry.getValue().size(),
-                            entry.getValue());
-                }
-            } else {
-                filenameMap = Arrays.stream(files).filter(s -> !s.isEmpty())
-                        .collect(groupingBy(filename -> filename, LinkedHashMap::new, toList()));
+                        })
+                        .collect(groupingBy(groupName -> groupName,
+                                collectingAndThen(
+                                        counting(),
+                                        v -> new ShinglesAndCount(ConcurrentHashMap.newKeySet(), new AtomicInteger(v.intValue()))
+                                )
+                        ));
+
+                System.err.printf("[%s] File groups (%d): %s%n", getTimeAndDate(), shinglesMap.size(), shinglesMap.keySet());
             }
 
             System.err.printf("[%s] Reading HPV viruses file by all threads...", getTimeAndDate());
@@ -148,35 +157,18 @@ public class PcjMain implements StartPoint {
         executor = Executors.newFixedThreadPool(threadPoolSize);
 
         while (true) {
-            GroupAndFilenames filenamesEntry = PCJ.at(0, () -> {
-                Map<String, List<String>> filenameMap = PCJ.localGet(Vars.filenameMap);
-                synchronized (filenameMap) {
-                    Iterator<Map.Entry<String, List<String>>> iterator = filenameMap.entrySet().iterator();
-                    if (iterator.hasNext()) {
-                        Map.Entry<String, List<String>> entry = iterator.next();
-                        iterator.remove();
-                        return new GroupAndFilenames(entry.getKey(), entry.getValue());
-                    } else {
-                        return null;
-                    }
+            String filename = PCJ.at(0, () -> {
+                Queue<String> filenames = PCJ.localGet(Vars.filenames);
+                synchronized (filenames) {
+                    return filenames.poll();
                 }
             });
 
-            if (filenamesEntry == null) {
+            if (filename == null) {
                 break;
             }
 
-            Set<String> shingles = new HashSet<>();
-            for (String filename : filenamesEntry.filenames()) {
-                Set<String> fileShingle = processFile(filename);
-                if (!filesGroupPattern.isEmpty()) {
-                    shingles.addAll(fileShingle);
-                }
-            }
-            if (!filesGroupPattern.isEmpty()) {
-                String result = crosscheckShingles("Group:" + filenamesEntry.name(), shingles);
-                PCJ.asyncAt(0, () -> System.out.print(result));
-            }
+            processFile(filename);
         }
         executor.shutdown();
         System.err.printf("[%s] Thread-%d finished processing all its files after %.9f%n",
@@ -189,20 +181,58 @@ public class PcjMain implements StartPoint {
         }
     }
 
-
-    private Set<String> processFile(String filename) {
-        Set<String> shingles = new HashSet<>();
-
+    private void processFile(String filename) {
         Instant fileStartTime = Instant.now();
         System.err.printf("[%s] Thread-%d is processing '%s' file...%n",
                 getTimeAndDate(), PCJ.myId(), filename);
+        try {
+            Set<String> shingles = readShinglesFromFile(filename);
 
+            String result = crosscheckShingles(filename, shingles);
+            System.out.print(result);
+
+            if (filesGroupPattern != null) {
+                Matcher m = filesGroupPattern.matcher(filename);
+                String filenameGroup = m.find() ? m.group() : "";
+
+                Set<String> groupShingles = PCJ.at(0, () -> {
+                    Map<String, ShinglesAndCount> shinglesMap = PCJ.localGet(Vars.shinglesMap);
+                    ShinglesAndCount shinglesAndCount = shinglesMap.get(filenameGroup);
+                    shinglesAndCount.shingles().addAll(shingles);
+                    if (shinglesAndCount.count().decrementAndGet() == 0) {
+                        return shinglesAndCount.shingles();
+                    } else {
+                        return null;
+                    }
+                });
+                if (groupShingles != null) {
+                    String groupResult = crosscheckShingles(filenameGroup, shingles);
+                    System.out.println(groupResult);
+                }
+            }
+
+            Instant.now();
+            System.err.printf("[%s] Thread-%d finished processing '%s' file after %.9f%n",
+                    getTimeAndDate(), PCJ.myId(), filename, Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9);
+        } catch (Exception e) {
+            System.err.printf("[%s] Exception after %.9f while processing '%s' by Thread-%d: %s%n",
+                    getTimeAndDate(),
+                    Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9,
+                    filename, PCJ.myId(), e);
+            e.printStackTrace(System.err);
+        }
+    }
+
+
+    private Set<String> readShinglesFromFile(String filename) throws IOException, ExecutionException, InterruptedException {
         List<Future<?>> shinglesFutures = new ArrayList<>();
         try (BufferedReader input = new BufferedReader(
                 new InputStreamReader(
                         new GZIPInputStream(
                                 new FileInputStream(filename), GZIP_BUFFER_KB * 1024)), READER_BUFFER_KB * 1024)
         ) {
+            Set<String> shingles = ConcurrentHashMap.newKeySet();
+
             input.readLine(); // skip line
             StringBuilder sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
             while (true) {
@@ -220,9 +250,8 @@ public class PcjMain implements StartPoint {
                                 localShingles.add(shingle);
                             }
                         }
-                        synchronized (shingles) {
-                            shingles.addAll(localShingles);
-                        }
+
+                        shingles.addAll(localShingles);
                     }));
                     if (line == null) {
                         break;
@@ -240,20 +269,11 @@ public class PcjMain implements StartPoint {
                 f.get();
             }
 
-            String result = crosscheckShingles(filename, shingles);
-            PCJ.asyncAt(0, () -> System.out.print(result));
-            Instant.now();
-            System.err.printf("[%s] Thread-%d finished processing '%s' file after %.9f%n",
-                    getTimeAndDate(), PCJ.myId(), filename, Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9);
+            return shingles;
         } catch (Exception e) {
-            System.err.printf("[%s] Exception after %.9f while processing '%s' by Thread-%d: %s%n",
-                    getTimeAndDate(),
-                    Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9,
-                    filename, PCJ.myId(), e);
-            e.printStackTrace(System.err);
             shinglesFutures.forEach(f -> f.cancel(false));
+            throw e;
         }
-        return shingles;
     }
 
     private String crosscheckShingles(String filename, Set<String> shingles) {
@@ -273,6 +293,6 @@ public class PcjMain implements StartPoint {
         return java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS"));
     }
 
-    record GroupAndFilenames(String name, List<String> filenames) implements Serializable {
+    record ShinglesAndCount(Set<String> shingles, AtomicInteger count) implements Serializable {
     }
 }
