@@ -12,16 +12,16 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,14 +49,14 @@ public class PcjMain implements StartPoint {
     private Pattern filesGroupPattern;
     private ExecutorService executor;
     private HpvViruses hpvViruses;
+    @SuppressWarnings({"FieldCanBeLocal"})
+    private ConcurrentLinkedQueue<String> filenames;
     @SuppressWarnings({"serializable", "FieldCanBeLocal"})
-    private Queue<String> filenames;
-    @SuppressWarnings({"serializable", "FieldCanBeLocal"})
-    private Map<String, ShingleSetAndCount> shinglesMap;
+    private Map<String, ShinglesAndCount> shinglesMap;
 
     @Storage
     enum Vars {
-        //        hpvViruses,
+        // hpvViruses,
         filenames,
         shinglesMap
     }
@@ -111,10 +111,10 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] hpvVirusesPath = %s%n", getTimeAndDate(),
                     hpvVirusesPath.isEmpty() ? "<bundled>" : hpvVirusesPath);
 
-            filenames = new ArrayDeque<>();
-            filenames.addAll(Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
-                    .filter(s -> !s.isBlank())
-                    .toList());
+            filenames = new ConcurrentLinkedQueue<>(
+                    Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
+                            .filter(s -> !s.isBlank())
+                            .toList());
             System.err.printf("[%s] Files to process (%d): %s%n", getTimeAndDate(), filenames.size(), filenames);
             System.err.printf("[%s] filesGroupPattern = %s%n", getTimeAndDate(),
                     filesGroupPattern == null ? "<none>" : filesGroupPattern.pattern());
@@ -128,10 +128,7 @@ public class PcjMain implements StartPoint {
                         .collect(groupingBy(groupName -> groupName,
                                 collectingAndThen(
                                         counting(),
-                                        count -> new ShingleSetAndCount(
-                                                ConcurrentHashMap.newKeySet(),
-                                                new AtomicInteger(count.intValue())
-                                        )
+                                        count -> new ShinglesAndCount(count.intValue())
                                 )
                         ));
 
@@ -163,10 +160,8 @@ public class PcjMain implements StartPoint {
 
         while (true) {
             String filename = PCJ.at(0, () -> {
-                Queue<String> filenames = PCJ.localGet(Vars.filenames);
-                synchronized (filenames) {
-                    return filenames.poll();
-                }
+                ConcurrentLinkedQueue<String> filenames = PCJ.localGet(Vars.filenames);
+                return filenames.poll();
             });
 
             if (filename == null) {
@@ -201,11 +196,11 @@ public class PcjMain implements StartPoint {
                 String groupName = m.find() ? m.group() : "";
 
                 Set<String> groupShingles = PCJ.at(0, () -> {
-                    Map<String, ShingleSetAndCount> shinglesMap = PCJ.localGet(Vars.shinglesMap);
-                    ShingleSetAndCount shingleSetAndCount = shinglesMap.get(groupName);
-                    shingleSetAndCount.shingleSet().addAll(shingles);
-                    if (shingleSetAndCount.count().decrementAndGet() == 0) {
-                        return shingleSetAndCount.shingleSet();
+                    Map<String, ShinglesAndCount> shinglesMap = PCJ.localGet(Vars.shinglesMap);
+                    ShinglesAndCount shinglesAndCount = shinglesMap.get(groupName);
+                    shinglesAndCount.addShingles(shingles);
+                    if (shinglesAndCount.decrementCount() == 0) {
+                        return shinglesAndCount.getShingles();
                     } else {
                         return null;
                     }
@@ -298,6 +293,25 @@ public class PcjMain implements StartPoint {
         return java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS"));
     }
 
-    record ShingleSetAndCount(Set<String> shingleSet, AtomicInteger count) implements Serializable {
+    static class ShinglesAndCount implements Serializable {
+        private final Set<String> shingles;
+        private final AtomicInteger count;
+
+        public ShinglesAndCount(int count) {
+            this.shingles = ConcurrentHashMap.newKeySet();
+            this.count = new AtomicInteger(count);
+        }
+
+        public void addShingles(Collection<String> newShingles) {
+            shingles.addAll(newShingles);
+        }
+
+        public Set<String> getShingles() {
+            return shingles;
+        }
+
+        public int decrementCount() {
+            return count.decrementAndGet();
+        }
     }
 }
