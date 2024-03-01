@@ -189,7 +189,7 @@ public class PcjMain implements StartPoint {
             Set<String> shingles = readShinglesFromFile(filename);
 
             String result = crosscheckShingles(filename, shingles);
-            PCJ.asyncAt(0, () -> System.out.print(result));
+            PCJ.asyncAt(0, () -> System.out.println(result));
 
             if (filesGroupPattern != null) {
                 Matcher m = filesGroupPattern.matcher(filename);
@@ -286,7 +286,7 @@ public class PcjMain implements StartPoint {
             }
             result.append(String.format("%-10s\t%.6f\t", max.name(), max.value()));
         }
-        return String.format("%s%s%n", result, filename);
+        return String.format("%s%s", result, filename);
     }
 
     private static String getTimeAndDate() {
