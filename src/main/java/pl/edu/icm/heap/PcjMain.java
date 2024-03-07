@@ -207,7 +207,7 @@ public class PcjMain implements StartPoint {
                     }
                 });
                 if (groupShingles != null) {
-                    String groupResult = crosscheckShingles(groupName, shingles);
+                    String groupResult = crosscheckShingles(groupName, groupShingles);
                     PCJ.asyncAt(0, () -> System.out.println(groupResult));
                 }
             }
