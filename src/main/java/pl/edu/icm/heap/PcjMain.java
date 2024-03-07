@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -160,7 +161,7 @@ public class PcjMain implements StartPoint {
 
         while (true) {
             String filename = PCJ.at(0, () -> {
-                ConcurrentLinkedQueue<String> filenames = PCJ.localGet(Vars.filenames);
+                Queue<String> filenames = PCJ.localGet(Vars.filenames);
                 return filenames.poll();
             });
 
