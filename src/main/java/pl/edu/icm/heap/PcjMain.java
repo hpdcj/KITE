@@ -234,7 +234,7 @@ public class PcjMain implements StartPoint {
             Set<String> shingles = ConcurrentHashMap.newKeySet();
 
             input.readLine(); // skip line
-            StringBuilder sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
+            StringBuilder sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
             while (true) {
                 String line = input.readLine();
                 if (line != null) {
@@ -257,7 +257,7 @@ public class PcjMain implements StartPoint {
                         break;
                     }
                     String lastChars = sb.substring(sb.length() - SHINGLE_LENGTH + 1);
-                    sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
+                    sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
                     sb.append(lastChars);
                 }
                 input.readLine(); // skip line
