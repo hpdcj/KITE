@@ -50,6 +50,7 @@ public class MainParallel {
                 String filename = args[argc];
                 System.err.println("Processing (" + (argc + 1) + " of " + args.length + ") '" + filename + "' file...");
                 List<Future<?>> shinglesFutures = new ArrayList<>();
+                Instant fileStartTime = Instant.now();
                 try (BufferedReader input = new BufferedReader(
                         new InputStreamReader(
                                 new GZIPInputStream(
@@ -64,7 +65,7 @@ public class MainParallel {
                     Set<String> shingles = new HashSet<>();
 
                     input.readLine(); // skip line
-                    StringBuilder sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
+                    StringBuilder sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
                     while (true) {
                         String line = input.readLine();
                         if (line != null) {
@@ -91,7 +92,7 @@ public class MainParallel {
                                 break;
                             }
                             String lastChars = sb.substring(sb.length() - SHINGLE_LENGTH + 1);
-                            sb = new StringBuilder(PROCESSING_BUFFER_KB * 1024);
+                            sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
                             sb.append(lastChars);
                         }
                         input.readLine(); // skip line
@@ -139,6 +140,8 @@ public class MainParallel {
                     e.printStackTrace(System.err);
                     shinglesFutures.forEach(f -> f.cancel(true));
                 }
+                System.err.printf("Finished (%d of %d) '%s' after %s%n",
+                        argc + 1, args.length, filename, Duration.between(fileStartTime, Instant.now()).toNanos() / 1e9);
             }
         }
 

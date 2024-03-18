@@ -46,7 +46,7 @@ public class MainSerial {
 
                 Set<String> shingles = new HashSet<>();
                 input.readLine(); // skip line
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
                 while (true) {
                     String line = input.readLine();
                     if (line != null) {
