@@ -69,9 +69,9 @@ public class PcjMain implements StartPoint {
 
         ExecutionBuilder builder = PCJ.executionBuilder(PcjMain.class)
                 .addProperty("shingleLength", System.getProperty("shingleLength", "" + (18)))
-                .addProperty("gzipBuffer", System.getProperty("gzipBuffer", "" + (16 * 1024)))
-                .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (32 * 1024)))
-                .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (16 * 1024)))
+                .addProperty("gzipBuffer", System.getProperty("gzipBuffer", "" + (512)))
+                .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (512)))
+                .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (64)))
                 .addProperty("threadPoolSize", System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()))
                 .addProperty("outputHpvCount", System.getProperty("outputHpvCount", "" + (3)))
                 .addProperty("hpvVirusesPath", System.getProperty("hpvVirusesPath", ""))

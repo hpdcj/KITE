@@ -13,9 +13,9 @@ import java.util.zip.GZIPInputStream;
 
 public class MainSerial {
     private static final int SHINGLE_LENGTH = Integer.parseInt(System.getProperty("shingleLength", "" + (18)));
-    private static final int GZIP_BUFFER_KB = Integer.parseInt(System.getProperty("gzipBuffer", "" + (16 * 1024)));
-    private static final int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (32 * 1024)));
-    private static final int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (16 * 1024)));
+    private static final int GZIP_BUFFER_KB = Integer.parseInt(System.getProperty("gzipBuffer", "" + (512)));
+    private static final int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (512)));
+    private static final int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (64)));
 
     public static void main(String[] args) {
         Instant startTime = Instant.now();
