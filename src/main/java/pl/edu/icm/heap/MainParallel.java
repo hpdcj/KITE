@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -18,11 +19,20 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.zip.GZIPInputStream;
 
 public class MainParallel {
-    private static final int SHINGLE_LENGTH = Integer.parseInt(System.getProperty("shingleLength", "" + (18)));
+    private static final int[] SHINGLES_LENGTH;
     private static final int GZIP_BUFFER_KB = Integer.parseInt(System.getProperty("gzipBuffer", "" + (512)));
     private static final int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (512)));
     private static final int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (64)));
     private static final int THREAD_POOL_SIZE = Integer.parseInt(System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()));
+
+    static {
+        SHINGLES_LENGTH = Arrays.stream(System.getProperty("shingleLength", "" + (18)).split(","))
+                .map(String::strip)
+                .filter(Utils::isNonNegativeInteger)
+                .mapToInt(Integer::parseInt)
+                .sorted()
+                .toArray();
+    }
 
     private static final LongAdder totalShinglesTime = new LongAdder();
     private static final LongAdder totalOnlyShinglesTime = new LongAdder();
@@ -30,7 +40,7 @@ public class MainParallel {
     private static final LongAdder totalCrosscheckTime = new LongAdder();
 
     public static void main(String[] args) throws IOException {
-        System.err.println("SHINGLE_LENGTH = " + SHINGLE_LENGTH);
+        System.err.println("SHINGLE_LENGTH = " + Utils.shinglesLengthToString(SHINGLES_LENGTH));
         System.err.println("GZIP_BUFFER_KB = " + GZIP_BUFFER_KB);
         System.err.println("READER_BUFFER_KB = " + READER_BUFFER_KB);
         System.err.println("PROCESSING_BUFFER_KB = " + PROCESSING_BUFFER_KB);
@@ -41,7 +51,7 @@ public class MainParallel {
         System.err.print("Reading HPV virus file...");
         System.err.flush();
 
-        HpvViruses hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa"), SHINGLE_LENGTH);
+        HpvViruses hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa"), SHINGLES_LENGTH);
 
         System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
 
@@ -78,10 +88,12 @@ public class MainParallel {
                             }
                             shinglesFutures.add(executor.submit(() -> {
                                 Set<String> localShingles = new HashSet<>();
-                                for (int index = 0; index <= _sb.length() - SHINGLE_LENGTH; ++index) {
-                                    String shingle = _sb.substring(index, index + SHINGLE_LENGTH);
-                                    if (hpvViruses.hasShingle(shingle)) {
-                                        localShingles.add(shingle);
+                                for (int index = 0; index <= _sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1]; ++index) {
+                                    for (int shingleLength : SHINGLES_LENGTH) {
+                                        String shingle = _sb.substring(index, index + shingleLength);
+                                        if (hpvViruses.hasShingle(shingle)) {
+                                            localShingles.add(shingle);
+                                        }
                                     }
                                 }
                                 synchronized (shingles) {
@@ -91,7 +103,7 @@ public class MainParallel {
                             if (line == null) {
                                 break;
                             }
-                            String lastChars = sb.substring(sb.length() - SHINGLE_LENGTH + 1);
+                            String lastChars = sb.substring(sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1] + 1);
                             sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
                             sb.append(lastChars);
                         }

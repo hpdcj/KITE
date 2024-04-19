@@ -42,7 +42,7 @@ import static java.util.stream.Collectors.groupingBy;
 
 @RegisterStorage
 public class PcjMain implements StartPoint {
-    private int SHINGLE_LENGTH;
+    private int[] SHINGLES_LENGTH;
     private int GZIP_BUFFER_KB;
     private int READER_BUFFER_KB;
     private int PROCESSING_BUFFER_KB;
@@ -89,7 +89,12 @@ public class PcjMain implements StartPoint {
     @Override
     public void main() {
         Instant startTime = Instant.now();
-        SHINGLE_LENGTH = Integer.parseInt(PCJ.getProperty("shingleLength"));
+        SHINGLES_LENGTH = Arrays.stream(PCJ.getProperty("shingleLength").split(","))
+                .map(String::strip)
+                .filter(Utils::isNonNegativeInteger)
+                .mapToInt(Integer::parseInt)
+                .sorted()
+                .toArray();
         GZIP_BUFFER_KB = Integer.parseInt(PCJ.getProperty("gzipBuffer"));
         READER_BUFFER_KB = Integer.parseInt(PCJ.getProperty("readerBuffer"));
         PROCESSING_BUFFER_KB = Integer.parseInt(PCJ.getProperty("processingBuffer"));
@@ -103,7 +108,7 @@ public class PcjMain implements StartPoint {
         }
 
         if (PCJ.myId() == 0) {
-            System.err.printf("[%s] shingleLength = %d%n", getTimeAndDate(), SHINGLE_LENGTH);
+            System.err.printf("[%s] shingleLength = %s%n", getTimeAndDate(), Utils.shinglesLengthToString(SHINGLES_LENGTH));
             System.err.printf("[%s] gzipBuffer = %d%n", getTimeAndDate(), GZIP_BUFFER_KB);
             System.err.printf("[%s] readerBuffer = %d%n", getTimeAndDate(), READER_BUFFER_KB);
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
@@ -143,7 +148,7 @@ public class PcjMain implements StartPoint {
         try (InputStream hpvVirusesInputStream = hpvVirusesPath.isEmpty()
                 ? HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")
                 : Files.newInputStream(Path.of(hpvVirusesPath))) {
-            hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLE_LENGTH);
+            hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLES_LENGTH);
         } catch (IOException e) {
             System.err.printf("[%s] Exception while reading HPV viruses file by Thread-%d: %s. Exiting!%n",
                     getTimeAndDate(), PCJ.myId(), e);
@@ -245,10 +250,13 @@ public class PcjMain implements StartPoint {
                     StringBuilder _sb = sb;
                     shinglesFutures.add(executor.submit(() -> {
                         Set<String> localShingles = new HashSet<>();
-                        for (int index = 0; index <= _sb.length() - SHINGLE_LENGTH; ++index) {
-                            String shingle = _sb.substring(index, index + SHINGLE_LENGTH);
-                            if (hpvViruses.hasShingle(shingle)) {
-                                localShingles.add(shingle);
+                        for (int index = 0; index <= _sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1]; ++index) {
+                            for (int shingleLength : SHINGLES_LENGTH) {
+                                String shingle = _sb.substring(index, index + shingleLength);
+
+                                if (hpvViruses.hasShingle(shingle)) {
+                                    localShingles.add(shingle);
+                                }
                             }
                         }
 
@@ -257,7 +265,7 @@ public class PcjMain implements StartPoint {
                     if (line == null) {
                         break;
                     }
-                    String lastChars = sb.substring(sb.length() - SHINGLE_LENGTH + 1);
+                    String lastChars = sb.substring(sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1] + 1);
                     sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
                     sb.append(lastChars);
                 }

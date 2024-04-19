@@ -13,7 +13,7 @@ public class HpvViruses implements Serializable {
     private final Map<String, Set<String>> hpvViruses;
     transient private final Set<String> superset;
 
-    public HpvViruses(InputStream inputStream, int shingleLength) throws IOException {
+    public HpvViruses(InputStream inputStream, int[] shinglesLength) throws IOException {
         hpvNames = new ArrayList<>();
         hpvViruses = new HashMap<>();
         try (BufferedReader br = new BufferedReader(
@@ -25,8 +25,10 @@ public class HpvViruses implements Serializable {
                 if (line == null || line.startsWith(">")) {
                     if (!virus.isEmpty()) {
                         Set<String> generator = new HashSet<>();
-                        for (int i = 0; i < virus.length() - shingleLength; ++i) {
-                            generator.add(virus.substring(i, i + shingleLength));
+                        for (int i = 0; i < virus.length() - shinglesLength[shinglesLength.length - 1]; ++i) {
+                            for (int shingleLength : shinglesLength) {
+                                generator.add(virus.substring(i, i + shingleLength));
+                            }
                         }
                         hpvNames.add(name);
                         hpvViruses.put(name, Collections.unmodifiableSet(generator));

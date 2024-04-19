@@ -6,16 +6,26 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 public class MainSerial {
-    private static final int SHINGLE_LENGTH = Integer.parseInt(System.getProperty("shingleLength", "" + (18)));
+    private static final int[] SHINGLES_LENGTH;
     private static final int GZIP_BUFFER_KB = Integer.parseInt(System.getProperty("gzipBuffer", "" + (512)));
     private static final int READER_BUFFER_KB = Integer.parseInt(System.getProperty("readerBuffer", "" + (512)));
     private static final int PROCESSING_BUFFER_KB = Integer.parseInt(System.getProperty("processingBuffer", "" + (64)));
+
+    static {
+        SHINGLES_LENGTH = Arrays.stream(System.getProperty("shingleLength", "" + (18)).split(","))
+                .map(String::strip)
+                .filter(Utils::isNonNegativeInteger)
+                .mapToInt(Integer::parseInt)
+                .sorted()
+                .toArray();
+    }
 
     public static void main(String[] args) {
         Instant startTime = Instant.now();
@@ -25,7 +35,7 @@ public class MainSerial {
 
         HpvViruses hpvViruses = null;
         try {
-            hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa"), SHINGLE_LENGTH);
+            hpvViruses = new HpvViruses(HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa"), SHINGLES_LENGTH);
         } catch (IOException e) {
             System.err.println("Exception while reading hpv viruses file: " + e);
             System.exit(1);
@@ -53,16 +63,18 @@ public class MainSerial {
                         sb.append(line);
                     }
                     if (line == null || sb.length() >= PROCESSING_BUFFER_KB * 1024) {
-                        for (int index = 0; index <= sb.length() - SHINGLE_LENGTH; ++index) {
-                            String shingle = sb.substring(index, index + SHINGLE_LENGTH);
-                            if (hpvViruses.hasShingle(shingle)) {
-                                shingles.add(shingle);
+                        for (int index = 0; index <= sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1]; ++index) {
+                            for (int shingleLength : SHINGLES_LENGTH) {
+                                String shingle = sb.substring(index, index + shingleLength);
+                                if (hpvViruses.hasShingle(shingle)) {
+                                    shingles.add(shingle);
+                                }
                             }
                         }
                         if (line == null) {
                             break;
                         }
-                        sb.delete(0, sb.length() - SHINGLE_LENGTH + 1);
+                        sb.delete(0, sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1] + 1);
                     }
                     input.readLine(); // skip line
                     input.readLine(); // skip line

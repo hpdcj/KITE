@@ -5,19 +5,22 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CrosscheckHpvViruses {
     public static void main(String[] args) throws IOException {
-        int shingleLength = Integer.parseInt(System.getProperty("shingleLength", "" + (18)));
-
+        int[] shinglesLength= Arrays.stream(System.getProperty("shingleLength", "" + (18)).split(","))
+                .map(String::strip)
+                .filter(Utils::isNonNegativeInteger)
+                .mapToInt(Integer::parseInt)
+                .sorted()
+                .toArray();
         try (InputStream hpvVirusesInputStream = args.length == 0
                 ? HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")
                 : Files.newInputStream(Path.of(args[0]))) {
-            HpvViruses hpvViruses = new HpvViruses(hpvVirusesInputStream, shingleLength);
+            HpvViruses hpvViruses = new HpvViruses(hpvVirusesInputStream, shinglesLength);
             for (String name : hpvViruses.getNames()) {
                 System.out.printf("\t%s", name);
             }
