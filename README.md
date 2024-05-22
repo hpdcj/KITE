@@ -1,9 +1,9 @@
-HPV-KITE
+HPV-Kite
 ========
 
 # Introduction
 
-HPV-KITE is acronym for the _HPV K-mer Index Tversky Estimator_.
+HPV-Kite is acronym for the _HPV K-mer Index Tversky Estimator_.
 
 This is a Java application for searching for the genes of HPV viruses in the samples in form of .fq.gz files.
 
