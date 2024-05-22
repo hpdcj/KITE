@@ -2,8 +2,8 @@ plugins {
     id 'java'
 }
 
-group = 'pl.edu.icm.heap'
-version = '1.0-SNAPSHOT'
+group = 'pl.edu.icm.heap.kite'
+version = '1.0'
 
 repositories {
     mavenCentral()
@@ -20,10 +20,30 @@ dependencies {
 }
 
 tasks.register('copyDependencies', Copy) {
-    group "build"
-    description "Copy dependencies into build directory"
+    group 'build'
+    description 'Copy dependencies into build directory'
 
     from configurations.runtimeClasspath
     into layout.buildDirectory.dir("libs")
 }
 jar.finalizedBy('copyDependencies')
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'pl.edu.icm.heap.kite.PcjMain'
+    }
+}
+
+tasks.register('createFatJar', Jar) {
+    group = 'build'
+    description 'Create one big (fat) jar with all dependencies in it'
+
+    manifest {
+        attributes 'Main-Class': 'pl.edu.icm.heap.kite.PcjMain'
+    }
+
+    archiveBaseName = 'hpv-kite'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
