@@ -1,4 +1,4 @@
-package pl.edu.icm.heap;
+package pl.edu.icm.heap.kite;
 
 import java.io.BufferedReader;
 import java.io.File;
