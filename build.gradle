@@ -19,31 +19,52 @@ dependencies {
     annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.3'
 }
 
+tasks.withType(Jar).configureEach {
+    manifest {
+        attributes 'Implementation-Title': project.name
+        attributes 'Implementation-Version': version
+        attributes 'Main-Class': 'pl.edu.icm.heap.kite.PcjMain'
+    }
+}
+
 tasks.register('copyDependencies', Copy) {
-    group 'build'
+    group 'release'
     description 'Copy dependencies into build directory'
 
     from configurations.runtimeClasspath
-    into layout.buildDirectory.dir("libs")
+    into layout.buildDirectory.dir('libs')
 }
-jar.finalizedBy('copyDependencies')
 
-jar {
+tasks.register('createDependenciesJar', Jar) {
+    group 'release'
+    description 'Create jar with all dependencies copied into output directory added into its manifest file'
+    dependsOn(copyDependencies)
+
+    with jar
     manifest {
-        attributes 'Main-Class': 'pl.edu.icm.heap.kite.PcjMain'
+        attributes 'Class-Path': configurations.runtimeClasspath.files.collect { it.getName() }.join(' ')
     }
 }
 
+tasks.register('release', Zip) {
+    group 'release'
+    description 'Create zip file with project and all its dependencies'
+    dependsOn(createDependenciesJar)
+
+    from layout.buildDirectory.dir('libs')
+    include '*.jar'
+    include '*/*.jar'
+    archiveFileName = project.name + '-' + version + '.zip'
+    destinationDirectory = layout.buildDirectory.dir('dist')
+}
+
+// alternatively fat/uber jar can be generated
 tasks.register('createFatJar', Jar) {
-    group = 'build'
-    description 'Create one big (fat) jar with all dependencies in it'
+    group = 'release'
+    description 'Create one big (fat, uber) jar with all dependencies extracted into it'
 
-    manifest {
-        attributes 'Main-Class': 'pl.edu.icm.heap.kite.PcjMain'
-    }
-
-    archiveBaseName = 'hpv-kite'
+    with jar
+    archiveClassifier = 'fatjar'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
 }
