@@ -9,6 +9,11 @@ repositories {
     mavenCentral()
 }
 
+java {
+    sourceCompatibility '17'
+    targetCompatibility '17'
+}
+
 dependencies {
     implementation 'pl.edu.icm.pcj:pcj:5.3.3'
     annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.3'
