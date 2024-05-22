@@ -75,8 +75,12 @@ public class PcjMain implements StartPoint {
                 .addProperty("outputHpvCount", System.getProperty("outputHpvCount", "" + (3)))
                 .addProperty("hpvVirusesPath", System.getProperty("hpvVirusesPath", ""))
                 .addProperty("filesGroupPattern", System.getProperty("filesGroupPattern", ""))
-                .addProperty("files", String.join(File.pathSeparator, args))
-                .addNodes(new File(System.getProperty("nodesFile", "nodes.txt")));
+                .addProperty("files", String.join(File.pathSeparator, args));
+
+        File nodesFile = new File(System.getProperty("nodesFile","nodes.txt"));
+        if (nodesFile.isFile()) {
+            builder.addNodes(nodesFile);
+        }
 
         if (Boolean.parseBoolean(System.getProperty("deploy", "false"))) {
             builder.deploy();
