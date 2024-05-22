@@ -57,7 +57,6 @@ public class PcjMain implements StartPoint {
 
     @Storage
     enum Vars {
-        // hpvViruses,
         filenames,
         shinglesMap
     }
@@ -140,7 +139,10 @@ public class PcjMain implements StartPoint {
 
                 System.err.printf("[%s] File groups (%d): %s%n", getTimeAndDate(), shinglesMap.size(), shinglesMap.keySet());
             }
+        }
+        executor = Executors.newFixedThreadPool(threadPoolSize);
 
+        if (PCJ.myId() == 0) {
             System.err.printf("[%s] Reading HPV viruses file by all threads...", getTimeAndDate());
             System.err.flush();
         }
@@ -161,8 +163,6 @@ public class PcjMain implements StartPoint {
         }
 
         PCJ.barrier();
-
-        executor = Executors.newFixedThreadPool(threadPoolSize);
 
         while (true) {
             String filename = PCJ.at(0, () -> {
