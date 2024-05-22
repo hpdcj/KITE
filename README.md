@@ -28,8 +28,25 @@ OpenJDK 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)
 
 That means that the Java in version 22 is installed on the computer, so it meets the requirement.
 If the `java` command is not found, that can mean that the command is not in the `PATH` or Java is not installed at all.
-You can easily install current ready to use version from https://jdk.java.net/ just by downloading the version adequate
+You can easily install current, ready to use, version from https://jdk.java.net/ just by downloading the version
+adequate
 to your operating system.
+
+#### PCJ library
+
+The application uses [the PCJ library](https://pcj.icm.edu.pl) ([GitHub](https://github.com/hpdcj/PCJ)) for process
+files concurrently using the multinode environment.
+The jar file with the PCJ library is attached in release zip file.
+
+#### Gradle
+
+<details>
+<summary>Building the application from source code</summary>
+The Gradle build system is used for managing  dependencies and for building software.
+It is possible to build the application from source code, by invoking `./gradlew assemble` or `gradlew.bat assemble`.
+
+Other useful tasks Gradle: `copyDependencies`, `createDependenciesJar`, `createFatJar`, `release`.
+</details>
 
 ### Release
 
@@ -39,14 +56,15 @@ The release is packed as ZIP file that has to be unpacked into local directory.
 
 ### Executing
 
-To run an application just invoke:
+To run the application just run the following command:
 
 `java -jar hpv-kite-1.0.jar <list-of-file-paths.fq.gz>`
 
-for example:
+For example:
 
-`java -jar hpv-kite-1.0.jar sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz`
+`java -jar hpv-kite-1.0.jar  *.fq.gz`
 
+<details><summary>Click to see command output</summary>
 It would produce output like:
 
 ```
@@ -69,8 +87,9 @@ INFO: Starting pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node)...
 [2024-05-22 12:33:44,699] Total time: 2,897480500
 maj 22, 2024 12:33:44 PM org.pcj.internal.InternalPCJ start
 INFO: Completed pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node) after 0h 0m 2s 959ms.
-
 ```
+
+</details>
 
 ### Parameters
 
@@ -87,7 +106,7 @@ The following tables shows the names of the parameters with their default values
 | nodesFile         |      nodes.txt      | file with names of the nodes which will be used to start multinode processing                                                                                                                                                                                                                   |
 | deploy            |        false        | flag to tell that application should use _deploy_ mechanism of the PCJ library (SSH connection) to start computation in multinode processing; if set to _false_, it is necessary to start processing files in multinode environment using available mechanisms like `srun`, `aprun`, `mpiexec`. |                             
 | threadPoolSize    |  _available CPUs_   | number of threads that is processing data                                                                                                                                                                                                                                                       |
-| processingBuffer  |         64          | minimal size of buffer for characters to start processing data (in KB)                                                                                                                                                                                                                          |
+| processingBuffer  |         64          | minimal size of buffer for characters to start processing data concurrently (in KB)                                                                                                                                                                                                             |
 | gzipBuffer        |         512         | internal buffer size for loading GZIP files (in KB)                                                                                                                                                                                                                                             |                 
 | readerBuffer      |         512         | internal buffer size for reading FASTQ files (in KB)                                                                                                                                                                                                                                            |                    
 
@@ -106,6 +125,7 @@ java \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
+<details><summary>Click to see command output</summary>
 That command would produce following information in a header:
 
 ```
@@ -126,3 +146,4 @@ INFO: Starting pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node)...
 <... further processing ...>
 ```
 
+</details>
