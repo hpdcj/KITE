@@ -1,31 +1,44 @@
-# HPV-KITE
+HPV-KITE
+========
+
+# Introduction
+
 HPV-KITE is acronym for the _HPV K-mer Index Tversky Estimator_.
 
 This is a Java application for searching for the genes of HPV viruses in the samples in form of .fq.gz files.
 
 Database of HPV viruses is generated from data from
-  [The PapillomaVirus Episteme (PaVE) database](https://pave.niaid.nih.gov/).
+[The PapillomaVirus Episteme (PaVE) database](https://pave.niaid.nih.gov/).
 The database is embedded into the output JAR file.
 
 ## Usage
+
 ### Prerequisities
+
 To be able to run the application _Java Runtime Environment_ at least in version 17 is required.
-You can check the available version of the Java on the system by invoking command:`java -version` in the terminal window.
+You can check the available version of the Java on the system by invoking command:`java -version` in the terminal
+window.
 It would produce output like:
+
 ```
 openjdk version "22.0.1" 2024-04-16
 OpenJDK Runtime Environment (build 22.0.1+8-16)
 OpenJDK 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)
 ```
+
 That means that the Java in version 22 is installed on the computer, so it meets the requirement.
 If the `java` command is not found, that can mean that the command is not in the `PATH` or Java is not installed at all.
-You can easily install current ready to use version from https://jdk.java.net/ just by downloading the version adequate to your operating system.
+You can easily install current ready to use version from https://jdk.java.net/ just by downloading the version adequate
+to your operating system.
 
 ### Release
-The current version of the application is available in [Release](https://github.com/hpdcj/HPV-KITE/releases/latest) page.
+
+The current version of the application is available in [Release](https://github.com/hpdcj/HPV-KITE/releases/latest)
+page.
 The release is packed as ZIP file that has to be unpacked into local directory.
 
 ### Executing
+
 To run an application just invoke:
 
 `java -jar hpv-kite-1.0.jar <list-of-file-paths.fq.gz>`
@@ -35,6 +48,7 @@ for example:
 `java -jar hpv-kite-1.0.jar sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz`
 
 It would produce output like:
+
 ```
 maj 22, 2024 12:33:40 PM org.pcj.internal.InternalPCJ start
 INFO: PCJ version 5.3.3-831a4fa (2023-10-10T14:35:07.064+0200)
@@ -59,21 +73,26 @@ INFO: Completed pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node) after 0h 
 ```
 
 ### Parameters
+
 HPV-KITE as multiple parameters that can be used for the run.
 
-These are the names of the parameters with their default values:
- * shingleLength = 18
- * gzipBuffer = 512
- * readerBuffer = 512
- * processingBuffer = 64
- * threadPoolSize = 8
- * outputHpvCount = 3
- * hpvVirusesPath = \<bundled\>
- * filesGroupPattern = "" (_empty string_)
- * nodesFile = _nodes.txt_
- * deploy = _false_
+The following tables shows the names of the parameters with their default values and their meaning.
 
-To modify parameter, just give its name with the `-D` prefix (eg. `-DshingleLength=30`) at the beginning of the command line just after `java`.
+| parameter name    |    default value    | description                                                                                                                                                                                                                                                                                     |
+|-------------------|:-------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| shingleLength     |         18          | list of comma separated values for K-mer length (e.g. `18` or `30,32`)                                                                                                                                                                                                                          |
+| outputHpvCount    |          3          | maximum number of HPV viruses that match index is returned; if non-positive - return results for all HPV viruses from the database                                                                                                                                                              |
+| hpvVirusesPath    |      _bundled_      | path to the FASTA files with HPV viruses database; if not provided, the application will use embedded database                                                                                                                                                                                  |
+| filesGroupPattern | "" (_empty string_) | regular expression pattern to group results from multiple input files                                                                                                                                                                                                                           |
+| nodesFile         |      nodes.txt      | file with names of the nodes which will be used to start multinode processing                                                                                                                                                                                                                   |
+| deploy            |        false        | flag to tell that application should use _deploy_ mechanism of the PCJ library (SSH connection) to start computation in multinode processing; if set to _false_, it is necessary to start processing files in multinode environment using available mechanisms like `srun`, `aprun`, `mpiexec`. |                             
+| threadPoolSize    |  _available CPUs_   | number of threads that is processing data                                                                                                                                                                                                                                                       |
+| processingBuffer  |         64          | minimal size of buffer for characters to start processing data (in KB)                                                                                                                                                                                                                          |
+| gzipBuffer        |         512         | internal buffer size for loading GZIP files (in KB)                                                                                                                                                                                                                                             |                 
+| readerBuffer      |         512         | internal buffer size for reading FASTQ files (in KB)                                                                                                                                                                                                                                            |                    
+
+To modify parameter, just give its name with the `-D` prefix (eg. `-DshingleLength=30`) at the beginning of the command
+line just after `java`.
 For example:
 
 ```bash
@@ -88,6 +107,7 @@ java \
 ```
 
 That command would produce following information in a header:
+
 ```
 maj 22, 2024 1:23:56 PM org.pcj.internal.InternalPCJ start
 INFO: PCJ version 5.3.3-831a4fa (2023-10-10T14:35:07.064+0200)
@@ -105,3 +125,4 @@ INFO: Starting pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node)...
 [2024-05-22 13:23:57,668] File groups (2): [sample_00, sample_08]
 <... further processing ...>
 ```
+
