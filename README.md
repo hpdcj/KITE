@@ -3,17 +3,21 @@ HPV-Kite
 
 # Introduction
 
-HPV-Kite is acronym for the _HPV K-mer Index Tversky Estimator_.
+HPV-Kite is a Java application to detect HPV within samples. It can be used for DNA and/or RNA FASTQ files.
 
-This is a Java application for searching for the genes of HPV viruses in the samples in form of .fq.gz files.
+KITE stands for _K-mer Index Tversky Estimator_, as the application leverages _k-mer_ analysis combined with the _Jaccard/Tversky index_.
+
+HPV-Kite not only expedites viral detection but also maintains comparable sensitivity to existing approaches.
 
 Database of HPV viruses is generated from data from
 [The PapillomaVirus Episteme (PaVE) database](https://pave.niaid.nih.gov/).
 The database is embedded into the output JAR file.
 
-## Usage
+# Flowchart
+![HPV-Kite Schema](hpv-kite-schema.png)
 
-### Prerequisities
+# Usage
+## Prerequisities
 
 To be able to run the application _Java Runtime Environment_ at least in version 17 is required.
 You can check the available version of the Java on the system by invoking command:`java -version` in the terminal
@@ -32,13 +36,13 @@ You can easily install current, ready to use, version from https://jdk.java.net/
 adequate
 to your operating system.
 
-#### PCJ library
+### PCJ library
 
 The application uses [the PCJ library](https://pcj.icm.edu.pl) ([GitHub](https://github.com/hpdcj/PCJ)) for process
 files concurrently using the multinode environment.
 The jar file with the PCJ library is attached in release zip file.
 
-#### Gradle
+### Gradle
 
 <details>
 <summary>Building the application from source code</summary>
@@ -48,13 +52,13 @@ It is possible to build the application from source code, by invoking `./gradlew
 Other useful tasks Gradle: `copyDependencies`, `createDependenciesJar`, `createFatJar`, `release`.
 </details>
 
-### Release
+## Release
 
 The current version of the application is available in [Release](https://github.com/hpdcj/HPV-KITE/releases/latest)
 page.
 The release is packed as ZIP file that has to be unpacked into local directory.
 
-### Executing
+## Executing
 
 To run the application just run the following command:
 
@@ -91,7 +95,7 @@ INFO: Completed pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node) after 0h 
 
 </details>
 
-### Parameters
+## Parameters
 
 HPV-KITE as multiple parameters that can be used for the run.
 
@@ -147,3 +151,10 @@ INFO: Starting pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node)...
 ```
 
 </details>
+
+
+# Please cite
+
+When using the tool in published research, please cite:
+
+_under review, please come back soon_
