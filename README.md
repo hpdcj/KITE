@@ -3,25 +3,30 @@ HPV-Kite
 
 # Introduction
 
-HPV-Kite is a Java application to detect HPV within samples. It can be used for DNA and/or RNA FASTQ files.
+HPV-Kite is a Java application that detects HPV within samples. It can be used for DNA and/or RNA FASTQ files.
 
-KITE stands for _K-mer Index Tversky Estimator_, as the application leverages _k-mer_ analysis combined with the _Tversky index_.
+KITE stands for _K-mer Index Tversky Estimator_, as the application leverages _k-mer_ analysis combined with the
+_Tversky index_.
 
 HPV-Kite not only expedites viral detection but also maintains comparable sensitivity to existing approaches.
 
-Database of HPV viruses is generated from data from
-[The PapillomaVirus Episteme (PaVE) database](https://pave.niaid.nih.gov/).
-The database is embedded into the output JAR file.
+The sample database of 222 HPV viruses generated 2024-02-23 from
+[The PapillomaVirus Episteme (PaVE) database](https://pave.niaid.nih.gov/)
+is embedded into the output JAR file.
+Still, it can also be any FASTA file with nucleotide sequences proceeded by descriptions of them.
 
 # Flowchart
+
 ![HPV-Kite Schema](https://github.com/hpdcj/HPV-KITE/assets/567976/f96c66b9-1bbf-4a25-8fb8-3936b7450b04)
 
 # Usage
+
 ## Prerequisities
 
 ### Java $\geq$ 17
-To be able to run the application _Java Runtime Environment_ at least in version 17 is required.
-You can check the available version of the Java on the system by invoking command: `java -version` in the terminal
+
+To run the application _Java Runtime Environment_, at least in version 17, is required.
+You can check the available version of the Java on the system by invoking the command: `java -version` in the terminal
 window.
 It would produce output like:
 
@@ -31,39 +36,39 @@ It would produce output like:
 > OpenJDK 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)
 > ```
 
-That means that the Java in version 22 is installed on the computer, so it meets the requirement.
+That means that Java in version 22 is installed on the computer, so it meets the requirement.
 If the `java` command is not found, that can mean that the command is not in the `PATH` or Java is not installed at all.
-You can easily install current, ready to use, version from https://jdk.java.net/ just by downloading the version
-adequate
-
-to your operating system.
+You can easily install the current ready-to-use version from https://jdk.java.net/ just by downloading the version that
+is adequate for your operating system.
 
 ### PCJ library
 
-The application uses [the PCJ library](https://pcj.icm.edu.pl) ([GitHub repository](https://github.com/hpdcj/PCJ)) for process
-files concurrently using the multinode environment. It uses PCJ in version 5.3.3.
-The jar file with the PCJ library is attached in [release zip file](https://github.com/hpdcj/HPV-KITE/releases/latest).
+The application uses [the PCJ library](https://pcj.icm.edu.pl) ([GitHub repository](https://github.com/hpdcj/PCJ))
+to process files concurrently using the multinode environment. It uses PCJ in version 5.3.3.
+The jar file with the PCJ library is attached
+in a [release zip file](https://github.com/hpdcj/HPV-KITE/releases/latest).
 
 ### Gradle Build Tool (for compiling only)
 
 <details>
 <summary>Building the application from source code</summary>
-The Gradle build system is used for managing  dependencies and for building software.
-It is possible to build the application from source code, by calling:
-  <code>./gradlew assemble</code> or <code>gradlew.bat assemble</code>.
 
-Other useful tasks Gradle: `createDependenciesJar`, `createFatJar`.
+The Gradle build system is used to manage dependencies and build software. It is possible to build the application from
+the source code, by calling:
+<code>./gradlew assemble</code> or <code>gradlew.bat assemble</code>.
+
+Other useful Gradle tasks: `createDependenciesJar`, `createFatJar`.
 </details>
 
 ## Release (binary version)
 
-The current version of the application is available in [Release](https://github.com/hpdcj/HPV-KITE/releases/latest)
+The current version of the application is available on the [Release](https://github.com/hpdcj/HPV-KITE/releases/latest)
 page.
-The release is packed as ZIP file that has to be unpacked into local directory.
+The release is packed as a ZIP file that has to be unpacked into a local directory.
 
 ## Executing
 
-To run the application just run the following command:
+To run the application, just run the following command:
 
 `java -jar hpv-kite-1.0.jar <list-of-file-paths.fq.gz>`
 
@@ -100,9 +105,9 @@ It would produce output like:
 
 ## Parameters
 
-HPV-KITE as multiple parameters that can be used for the run.
+HPV-KITE has multiple parameters that can be used for the run.
 
-The following tables shows the names of the parameters with their default values and their meaning.
+The following tables show the names of the parameters with their default values and meaning.
 
 | parameter name    |    default value    | description                                                                                                                                                                                                                                                                                     |
 |-------------------|:-------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -117,8 +122,8 @@ The following tables shows the names of the parameters with their default values
 | gzipBuffer        |         512         | internal buffer size for loading GZIP files (in KB)                                                                                                                                                                                                                                             |                 
 | readerBuffer      |         512         | internal buffer size for reading FASTQ files (in KB)                                                                                                                                                                                                                                            |                    
 
-To modify parameter, just give its name with the `-D` prefix (eg. `-DshingleLength=30`) at the beginning of the command
-line just after `java`.
+To modify the parameter, just give its name with the `-D` prefix (e.g. `-DshingleLength=30`) at the beginning of the
+command line just after `java`.
 For example:
 
 ```bash
@@ -129,7 +134,9 @@ java \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
-It will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`) on local machine returning _the index_ only for the most similar HPV virus (`-DoutputHpvCount=1`) using the 30-character long shingles (_k-mers_; `-DshingleLength=30`).
+It will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`) on the
+local machine, returning _the index_ only for the most similar HPV virus (`-DoutputHpvCount=1`) using the 30-character
+long shingles (_k-mers_; `-DshingleLength=30`).
 
 ### Advanced example
 
@@ -144,32 +151,37 @@ java \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
-The command will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`) like in the example above, but on nodes described in `all_nodes.txt` file (`-DnodesFile=all_nodes.txt`).
+The command will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`)
+like in the example above, but on nodes described in `all_nodes.txt` file (`-DnodesFile=all_nodes.txt`).
 
 <details><summary>all_nodes.txt file</summary>
-  
-  The `all_nodes.txt` file should have written each node in separate line, e.g.:
-  
+
+The `all_nodes.txt` file should have the hostname of each node in a separate line, e.g.:
+
 ```
 wn8001
 wn8002
 wn8003
 ```
+
 </details>
 
 It will start computation on these nodes using SSH connection (`-Ddeploy=true`).
 
 > [!NOTE]
-> Be sure that HPV-Kite _jar files_ (`hpv-kite-1.0.jar` and `pcj-5.3.3.jar`) are located in the same path as in the calling machine.
-> This is normal in most of the _computer clusters_. However, then you are probably using `srun` and then you do not have to use _deploy_ mechanism.
+> Be sure that HPV-Kite _jar files_ (`hpv-kite-1.0.jar` and `pcj-5.3.3.jar`) are located in the same path as in the
+> calling machine.
+> This is normal in most of the _computer clusters_. However, then you are probably using `srun` and then you do not
+> have to use _deploy_ mechanism.
 
-Shingles from multiple input files will be grouped (`-DfilesGroupPattern='sample_0[0-9]'`) to generate summary result for these groups:
-* sample_00 (files: `sample_00005.fq.gz` and `sample_00064.fq.gz`),
-* sample_08 (file: `sample_08414_without.fq.gz`).
+Shingles from multiple input files will be grouped (`-DfilesGroupPattern='sample_0[0-9]'`) to generate summary result
+for these groups:
 
+1. sample_00 (files: `sample_00005.fq.gz` and `sample_00064.fq.gz`),
+2. sample_08 (file: `sample_08414_without.fq.gz`).
 
 <details><summary>Click to see command output</summary>
-The command would produce following information in a header:
+The command would produce the following information in a header:
 
 > ```
 > maj 22, 2024 1:23:56 PM org.pcj.internal.InternalPCJ start
@@ -190,7 +202,6 @@ The command would produce following information in a header:
 > ```
 
 </details>
-
 
 # Please cite
 
