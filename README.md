@@ -14,7 +14,7 @@ Database of HPV viruses is generated from data from
 The database is embedded into the output JAR file.
 
 # Flowchart
-![HPV-Kite Schema](hpv-kite-schema.png)
+![HPV-Kite Schema](https://github.com/hpdcj/HPV-KITE/assets/567976/f96c66b9-1bbf-4a25-8fb8-3936b7450b04)
 
 # Usage
 ## Prerequisities
@@ -33,7 +33,7 @@ OpenJDK 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)
 That means that the Java in version 22 is installed on the computer, so it meets the requirement.
 If the `java` command is not found, that can mean that the command is not in the `PATH` or Java is not installed at all.
 You can easily install current, ready to use, version from https://jdk.java.net/ just by downloading the version
-adequate![hpv-kite-schema](https://github.com/hpdcj/HPV-KITE/assets/567976/f96c66b9-1bbf-4a25-8fb8-3936b7450b04)
+adequate
 
 to your operating system.
 
