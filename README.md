@@ -171,8 +171,9 @@ It will start computation on these nodes using SSH connection (`-Ddeploy=true`).
 > [!NOTE]
 > Be sure that HPV-Kite _jar files_ (`hpv-kite-1.0.jar` and `pcj-5.3.3.jar`) are located in the same path as in the
 > calling machine.
-> This is normal in most of the _computer clusters_. However, then you are probably using `srun` and then you do not
-> have to use _deploy_ mechanism.
+> This is normal in most of the _computer clusters_.
+> However, then you are probably using `mpiexec`, `srun` or another command to run parallel jobs, so you do not have
+> to use _deploy_ mechanism.
 
 Shingles from multiple input files will be grouped (`-DfilesGroupPattern='sample_0[0-9]'`) to generate summary result
 for these groups:
