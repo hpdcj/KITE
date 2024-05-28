@@ -84,7 +84,7 @@ It would produce output like:
 > INFO: PCJ version 5.3.3-831a4fa (2023-10-10T14:35:07.064+0200)
 > maj 22, 2024 12:33:41 PM org.pcj.internal.InternalPCJ start
 > INFO: Starting pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node)...
-> [2024-05-22 12:33:41,806] shingleLength = 18
+> [2024-05-22 12:33:41,806] shingleLength = 31
 > [2024-05-22 12:33:41,807] gzipBuffer = 512
 > [2024-05-22 12:33:41,807] readerBuffer = 512
 > [2024-05-22 12:33:41,808] processingBuffer = 64
@@ -111,7 +111,7 @@ The following tables show the names of the parameters with their default values 
 
 | parameter name    |    default value    | description                                                                                                                                                                                                                                                                                     |
 |-------------------|:-------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| shingleLength     |         18          | list of comma separated values for K-mer length (e.g. `18` or `30,32`)                                                                                                                                                                                                                          |
+| shingleLength     |         31          | list of comma separated values for K-mer length (e.g. `18` or `30,32`)                                                                                                                                                                                                                          |
 | outputHpvCount    |          3          | maximum number of HPV viruses that match index is returned; if non-positive - return results for all HPV viruses from the database                                                                                                                                                              |
 | hpvVirusesPath    |      _bundled_      | path to the FASTA files with HPV viruses database; if not provided, the application will use embedded database                                                                                                                                                                                  |
 | filesGroupPattern | "" (_empty string_) | regular expression pattern to group results from multiple input files; _empty string_ means not to group results                                                                                                                                                                                |

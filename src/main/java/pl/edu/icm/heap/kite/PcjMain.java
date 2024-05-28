@@ -67,7 +67,7 @@ public class PcjMain implements StartPoint {
         }
 
         ExecutionBuilder builder = PCJ.executionBuilder(PcjMain.class)
-                .addProperty("shingleLength", System.getProperty("shingleLength", "" + (18)))
+                .addProperty("shingleLength", System.getProperty("shingleLength", "" + (31)))
                 .addProperty("gzipBuffer", System.getProperty("gzipBuffer", "" + (512)))
                 .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (512)))
                 .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (64)))
