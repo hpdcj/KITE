@@ -19,6 +19,8 @@ Still, it can also be any FASTA file with nucleotide sequences proceeded by desc
 
 ![HPV-Kite Schema](https://github.com/hpdcj/HPV-KITE/assets/567976/f96c66b9-1bbf-4a25-8fb8-3936b7450b04)
 
+_**Schematic view of HPV-KITE execution.** (Image from [[1]](https://doi.org/10.1093/bib/bbaf155))_
+
 # Usage
 
 ## Prerequisities
@@ -208,4 +210,4 @@ The command would produce the following information in a header:
 
 When using the tool in published research, please cite:
 
-_under review, please come back soon_
+1. Marek Nowicki, Magdalena Mroczek, Dhananjay Mukhedkar, Piotr Bała, Ville Nikolai Pimenoff, Laila Sara Arroyo Mühr, HPV-KITE: sequence analysis software for rapid HPV genotype detection, _Briefings in Bioinformatics_, Volume 26, Issue 2, March 2025, bbaf155, https://doi.org/10.1093/bib/bbaf155
