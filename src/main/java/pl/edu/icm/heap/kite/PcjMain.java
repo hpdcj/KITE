@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import org.pcj.ExecutionBuilder;
 import org.pcj.PCJ;
@@ -163,7 +164,8 @@ public class PcjMain implements StartPoint {
 
         if (PCJ.myId() == 0) {
             System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
-            System.err.printf("[%s] Loaded %d HPV viruses: %s%n", getTimeAndDate(), hpvViruses.count(), Arrays.toString(hpvViruses.getNames()));
+            System.err.printf("[%s] Loaded %d HPV viruses: %s%n", getTimeAndDate(), hpvViruses.count(),
+                    Arrays.stream(hpvViruses.getNames()).map(name -> name+"("+hpvViruses.getShingles(name).size()+")").collect(Collectors.joining(", ")));
         }
 
         PCJ.barrier();
