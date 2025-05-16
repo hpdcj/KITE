@@ -73,12 +73,12 @@ public class PcjMain implements StartPoint {
                 .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (512)))
                 .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (64)))
                 .addProperty("threadPoolSize", System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()))
-                .addProperty("outputVirusCount", System.getProperty("outputVirusCount", "" + (3)))
+                .addProperty("outputVirusCount", System.getProperty("outputVirusCount", "" + (0)))
                 .addProperty("databasePath", System.getProperty("databasePath", ""))
                 .addProperty("filesGroupPattern", System.getProperty("filesGroupPattern", ""))
                 .addProperty("files", String.join(File.pathSeparator, args));
 
-        File nodesFile = new File(System.getProperty("nodesFile","nodes.txt"));
+        File nodesFile = new File(System.getProperty("nodesFile", "nodes.txt"));
         if (nodesFile.isFile()) {
             builder.addNodes(nodesFile);
         }
@@ -104,7 +104,7 @@ public class PcjMain implements StartPoint {
         PROCESSING_BUFFER_KB = Integer.parseInt(PCJ.getProperty("processingBuffer"));
         OUTPUT_VIRUS_COUNT = Integer.parseInt(PCJ.getProperty("outputVirusCount"));
         int threadPoolSize = Integer.parseInt(PCJ.getProperty("threadPoolSize"));
-        String databasePath = PCJ.getProperty("databasePath");
+        String databasePaths = PCJ.getProperty("databasePaths");
 
         String filesGroupPatternString = PCJ.getProperty("filesGroupPattern");
         if (!filesGroupPatternString.isBlank()) {
@@ -118,8 +118,8 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
             System.err.printf("[%s] outputVirusCount = %d%n", getTimeAndDate(), OUTPUT_VIRUS_COUNT);
-            System.err.printf("[%s] databasePath = %s%n", getTimeAndDate(),
-                    databasePath.isEmpty() ? "<bundled>" : databasePath);
+            System.err.printf("[%s] databasePaths = %s%n", getTimeAndDate(),
+                    databasePaths.isEmpty() ? "<bundled>" : databasePaths);
 
             filenames = new ConcurrentLinkedQueue<>(
                     Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
@@ -148,24 +148,45 @@ public class PcjMain implements StartPoint {
         executor = Executors.newFixedThreadPool(threadPoolSize);
 
         if (PCJ.myId() == 0) {
-            System.err.printf("[%s] Reading virus database file by all threads...", getTimeAndDate());
-            System.err.flush();
+            System.err.printf("[%s] Reading virus database files by all threads%n", getTimeAndDate());
         }
 
-        try (InputStream databaseInputStream = databasePath.isEmpty()
-                ? VirusesDatabase.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")
-                : Files.newInputStream(Path.of(databasePath))) {
-            virusesDatabase = new VirusesDatabase(databaseInputStream, SHINGLES_LENGTH);
+        virusesDatabase = new VirusesDatabase(SHINGLES_LENGTH);
+        try {
+            Instant databasesStartTime = Instant.now();
+
+            if (databasePaths.isEmpty()) {
+                if (PCJ.myId()==0) {
+                    System.err.printf("[%s] Reading embedded database file%n", getTimeAndDate());
+                }
+                try (InputStream databaseInputStream = VirusesDatabase.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")) {
+                    virusesDatabase.loadFromInputStream(databaseInputStream);
+                }
+            } else {
+                for (String databasePath : databasePaths.split(" ")) {
+                    Instant databaseStartTime = Instant.now();
+                    if (PCJ.myId()==0) {
+                        System.err.printf("[%s] Reading database file: %s...", getTimeAndDate(), databasePath);
+                        System.err.flush();
+                    }
+                    try (InputStream databaseInputStream = Files.newInputStream(Path.of(databasePath))) {
+                        virusesDatabase.loadFromInputStream(databaseInputStream);
+                    }
+                    if (PCJ.myId()==0) {
+                        System.err.printf("takes %s...", Duration.between(databasesStartTime, Instant.now()).toNanos() / 1e9);
+                    }
+                }
+            }
+
+            if (PCJ.myId() == 0) {
+                System.err.printf("[%s] Loaded %d viruses in %.6f: %s%n", getTimeAndDate(), virusesDatabase.count(),
+                        Duration.between(databasesStartTime, Instant.now()).toNanos() / 1e9,
+                        Arrays.stream(virusesDatabase.getNames()).map(name -> name + "(" + virusesDatabase.getShingles(name).size() + ")").collect(Collectors.joining(", ")));
+            }
         } catch (IOException e) {
             System.err.printf("[%s] Exception while reading database file by Thread-%d: %s. Exiting!%n",
                     getTimeAndDate(), PCJ.myId(), e);
             System.exit(1);
-        }
-
-        if (PCJ.myId() == 0) {
-            System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
-            System.err.printf("[%s] Loaded %d viruses: %s%n", getTimeAndDate(), virusesDatabase.count(),
-                    Arrays.stream(virusesDatabase.getNames()).map(name -> name+"("+ virusesDatabase.getShingles(name).size()+")").collect(Collectors.joining(", ")));
         }
 
         PCJ.barrier();

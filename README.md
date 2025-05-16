@@ -91,8 +91,8 @@ It would produce output like:
 > [2024-05-22 12:33:41,807] readerBuffer = 512
 > [2024-05-22 12:33:41,808] processingBuffer = 64
 > [2024-05-22 12:33:41,809] threadPoolSize = 8
-> [2024-05-22 12:33:41,809] outputHpvCount = 3
-> [2024-05-22 12:33:41,810] hpvVirusesPath = <bundled>
+> [2024-05-22 12:33:41,809] outputVirusCount = 3
+> [2024-05-22 12:33:41,810] databasePaths = <bundled>
 > [2024-05-22 12:33:41,813] Files to process (3): [sample_00005.fq.gz, sample_00064.fq.gz, sample_08414_without.fq.gz]
 > [2024-05-22 12:33:41,813] filesGroupPattern = <none>
 > [2024-05-22 12:33:41,814] Reading HPV viruses file by all threads... takes 0,894718
@@ -114,8 +114,8 @@ The following tables show the names of the parameters with their default values 
 | parameter name    |    default value    | description                                                                                                                                                                                                                                                                                     |
 |-------------------|:-------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | shingleLength     |         31          | list of comma separated values for K-mer length (e.g. `18` or `30,32`)                                                                                                                                                                                                                          |
-| outputHpvCount    |          3          | maximum number of HPV viruses that match index is returned; if non-positive - return results for all HPV viruses from the database                                                                                                                                                              |
-| hpvVirusesPath    |      _bundled_      | path to the FASTA files with HPV viruses database; if not provided, the application will use embedded database                                                                                                                                                                                  |
+| outputVirusCount  |          0          | maximum number of viruses that match index is returned; if non-positive - return results for all viruses from the database                                                                                                                                                                      |
+| databasePaths     |      _bundled_      | path to the FASTA files with viruses (reference) database; if not provided, the application will use embedded database. Multiple files should be separated by space. The name of the virus is the first word from the description field (that starts with `>` in FASTA file).                     |
 | filesGroupPattern | "" (_empty string_) | regular expression pattern to group results from multiple input files; _empty string_ means not to group results                                                                                                                                                                                |
 | nodesFile         |      nodes.txt      | file with names of the nodes which will be used to start multinode processing                                                                                                                                                                                                                   |
 | deploy            |        false        | flag to tell that application should use _deploy_ mechanism of the PCJ library (SSH connection) to start computation in multinode processing; if set to _false_, it is necessary to start processing files in multinode environment using available mechanisms like `srun`, `aprun`, `mpiexec`. |                             
@@ -131,7 +131,7 @@ For example:
 ```bash
 java \
   -DshingleLength=30 \
-  -DoutputHpvCount=1 \
+  -DoutputVirusCount=1 \
   -jar hpv-kite-1.0.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
@@ -147,7 +147,7 @@ java \
   -DshingleLength=30 \
   -DnodesFile=all_nodes.txt \
   -Ddeploy=true \
-  -DoutputHpvCount=1 \
+  -DoutputVirusCount=1 \
   -DfilesGroupPattern='sample_0[0-9]'  \
   -jar hpv-kite-1.0.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
@@ -196,8 +196,8 @@ The command would produce the following information in a header:
 > [2024-05-22 13:23:57,657] readerBuffer = 512
 > [2024-05-22 13:23:57,658] processingBuffer = 64
 > [2024-05-22 13:23:57,658] threadPoolSize = 8
-> [2024-05-22 13:23:57,659] outputHpvCount = 1
-> [2024-05-22 13:23:57,659] hpvVirusesPath = <bundled>
+> [2024-05-22 13:23:57,659] outputVirusCount = 1
+> [2024-05-22 13:23:57,659] databasePaths = <bundled>
 > [2024-05-22 13:23:57,661] Files to process (3): [sample_00005.fq.gz, sample_00064.fq.gz, sample_08414_without.fq.gz]
 > [2024-05-22 13:23:57,662] filesGroupPattern = sample_0[0-9]
 > [2024-05-22 13:23:57,668] File groups (2): [sample_00, sample_08]

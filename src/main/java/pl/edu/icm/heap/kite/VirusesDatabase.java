@@ -9,13 +9,37 @@ import java.io.Serializable;
 import java.util.*;
 
 public class VirusesDatabase implements Serializable {
+    private final int[] shinglesLength;
     private final List<String> names;
     private final Map<String, Set<String>> viruses;
     transient private final Set<String> superset;
 
-    public VirusesDatabase(InputStream inputStream, int[] shinglesLength) throws IOException {
+    public VirusesDatabase(int[] shinglesLength) {
+        this.shinglesLength = shinglesLength;
+
         names = new ArrayList<>();
         viruses = new HashMap<>();
+        superset = new HashSet<>();
+    }
+
+    public VirusesDatabase(VirusesDatabase that) {
+        this.shinglesLength = that.shinglesLength;
+        this.names = that.names;
+        this.viruses = that.viruses;
+
+        superset = new HashSet<>();
+        viruses.values().forEach(superset::addAll);
+    }
+
+    @Serial
+    private Object readResolve() {
+        return new VirusesDatabase(this);
+    }
+
+    public void loadFromInputStream(InputStream inputStream) throws IOException {
+        Map<String, Set<String>> localViruses = new HashMap<>();
+        List<String> localNames = new ArrayList<>();
+
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(inputStream))) {
             String name = "";
@@ -30,8 +54,8 @@ public class VirusesDatabase implements Serializable {
                                 generator.add(virus.substring(i, i + shingleLength));
                             }
                         }
-                        names.add(name);
-                        viruses.put(name, Collections.unmodifiableSet(generator));
+                        localNames.add(name);
+                        localViruses.put(name, Collections.unmodifiableSet(generator));
 
                         virus.setLength(0);
                     }
@@ -39,29 +63,17 @@ public class VirusesDatabase implements Serializable {
                         break;
                     }
 
-                    int index = line.indexOf(" ");
-                    name = line.substring(1, index == -1 ? line.length() : index);
+                    name = line.substring(1).strip().split(" +")[0];
                 } else {
                     virus.append(line);
                 }
             }
         }
 
-        superset = new HashSet<>();
-        viruses.values().forEach(superset::addAll);
-    }
+        viruses.putAll(localViruses);
+        names.addAll(localNames);
+        localViruses.values().forEach(superset::addAll);
 
-    public VirusesDatabase(VirusesDatabase that) {
-        this.names = that.names;
-        this.viruses = that.viruses;
-
-        superset = new HashSet<>();
-        viruses.values().forEach(superset::addAll);
-    }
-
-    @Serial
-    private Object readResolve() {
-        return new VirusesDatabase(this);
     }
 
     public int count() {
