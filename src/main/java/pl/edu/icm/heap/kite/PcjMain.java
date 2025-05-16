@@ -163,7 +163,7 @@ public class PcjMain implements StartPoint {
                     virusesDatabase.loadFromInputStream(databaseInputStream);
                 }
             } else {
-                for (String databasePath : databasePaths.split(" ")) {
+                for (String databasePath : databasePaths.split("\\s+")) {
                     Instant databaseStartTime = Instant.now();
                     if (PCJ.myId()==0) {
                         System.err.printf("[%s] Reading database file: %s...", getTimeAndDate(), databasePath);
@@ -173,7 +173,7 @@ public class PcjMain implements StartPoint {
                         virusesDatabase.loadFromInputStream(databaseInputStream);
                     }
                     if (PCJ.myId()==0) {
-                        System.err.printf("takes %s...", Duration.between(databasesStartTime, Instant.now()).toNanos() / 1e9);
+                        System.err.printf("takes %s...", Duration.between(databaseStartTime, Instant.now()).toNanos() / 1e9);
                     }
                 }
             }

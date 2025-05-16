@@ -63,7 +63,7 @@ public class VirusesDatabase implements Serializable {
                         break;
                     }
 
-                    name = line.substring(1).strip().split(" +")[0];
+                    name = line.substring(1).strip().split("\\s+")[0];
                 } else {
                     virus.append(line);
                 }
