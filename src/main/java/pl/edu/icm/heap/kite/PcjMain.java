@@ -47,10 +47,10 @@ public class PcjMain implements StartPoint {
     private int GZIP_BUFFER_KB;
     private int READER_BUFFER_KB;
     private int PROCESSING_BUFFER_KB;
-    private int OUTPUT_HPV_COUNT;
+    private int OUTPUT_VIRUS_COUNT;
     private Pattern filesGroupPattern;
     private ExecutorService executor;
-    private HpvViruses hpvViruses;
+    private VirusesDatabase virusesDatabase;
     @SuppressWarnings({"FieldCanBeLocal"})
     private ConcurrentLinkedQueue<String> filenames;
     @SuppressWarnings({"serializable", "FieldCanBeLocal"})
@@ -73,8 +73,8 @@ public class PcjMain implements StartPoint {
                 .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (512)))
                 .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (64)))
                 .addProperty("threadPoolSize", System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()))
-                .addProperty("outputHpvCount", System.getProperty("outputHpvCount", "" + (3)))
-                .addProperty("hpvVirusesPath", System.getProperty("hpvVirusesPath", ""))
+                .addProperty("outputVirusCount", System.getProperty("outputVirusCount", "" + (3)))
+                .addProperty("databasePath", System.getProperty("databasePath", ""))
                 .addProperty("filesGroupPattern", System.getProperty("filesGroupPattern", ""))
                 .addProperty("files", String.join(File.pathSeparator, args));
 
@@ -102,9 +102,9 @@ public class PcjMain implements StartPoint {
         GZIP_BUFFER_KB = Integer.parseInt(PCJ.getProperty("gzipBuffer"));
         READER_BUFFER_KB = Integer.parseInt(PCJ.getProperty("readerBuffer"));
         PROCESSING_BUFFER_KB = Integer.parseInt(PCJ.getProperty("processingBuffer"));
-        OUTPUT_HPV_COUNT = Integer.parseInt(PCJ.getProperty("outputHpvCount"));
+        OUTPUT_VIRUS_COUNT = Integer.parseInt(PCJ.getProperty("outputVirusCount"));
         int threadPoolSize = Integer.parseInt(PCJ.getProperty("threadPoolSize"));
-        String hpvVirusesPath = PCJ.getProperty("hpvVirusesPath");
+        String databasePath = PCJ.getProperty("databasePath");
 
         String filesGroupPatternString = PCJ.getProperty("filesGroupPattern");
         if (!filesGroupPatternString.isBlank()) {
@@ -117,9 +117,9 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] readerBuffer = %d%n", getTimeAndDate(), READER_BUFFER_KB);
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
-            System.err.printf("[%s] outputHpvCount = %d%n", getTimeAndDate(), OUTPUT_HPV_COUNT);
-            System.err.printf("[%s] hpvVirusesPath = %s%n", getTimeAndDate(),
-                    hpvVirusesPath.isEmpty() ? "<bundled>" : hpvVirusesPath);
+            System.err.printf("[%s] outputVirusCount = %d%n", getTimeAndDate(), OUTPUT_VIRUS_COUNT);
+            System.err.printf("[%s] databasePath = %s%n", getTimeAndDate(),
+                    databasePath.isEmpty() ? "<bundled>" : databasePath);
 
             filenames = new ConcurrentLinkedQueue<>(
                     Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
@@ -148,24 +148,24 @@ public class PcjMain implements StartPoint {
         executor = Executors.newFixedThreadPool(threadPoolSize);
 
         if (PCJ.myId() == 0) {
-            System.err.printf("[%s] Reading HPV viruses file by all threads...", getTimeAndDate());
+            System.err.printf("[%s] Reading virus database file by all threads...", getTimeAndDate());
             System.err.flush();
         }
 
-        try (InputStream hpvVirusesInputStream = hpvVirusesPath.isEmpty()
-                ? HpvViruses.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")
-                : Files.newInputStream(Path.of(hpvVirusesPath))) {
-            hpvViruses = new HpvViruses(hpvVirusesInputStream, SHINGLES_LENGTH);
+        try (InputStream databaseInputStream = databasePath.isEmpty()
+                ? VirusesDatabase.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")
+                : Files.newInputStream(Path.of(databasePath))) {
+            virusesDatabase = new VirusesDatabase(databaseInputStream, SHINGLES_LENGTH);
         } catch (IOException e) {
-            System.err.printf("[%s] Exception while reading HPV viruses file by Thread-%d: %s. Exiting!%n",
+            System.err.printf("[%s] Exception while reading database file by Thread-%d: %s. Exiting!%n",
                     getTimeAndDate(), PCJ.myId(), e);
             System.exit(1);
         }
 
         if (PCJ.myId() == 0) {
             System.err.printf(" takes %.6f\n", Duration.between(startTime, Instant.now()).toNanos() / 1e9);
-            System.err.printf("[%s] Loaded %d HPV viruses: %s%n", getTimeAndDate(), hpvViruses.count(),
-                    Arrays.stream(hpvViruses.getNames()).map(name -> name+"("+hpvViruses.getShingles(name).size()+")").collect(Collectors.joining(", ")));
+            System.err.printf("[%s] Loaded %d viruses: %s%n", getTimeAndDate(), virusesDatabase.count(),
+                    Arrays.stream(virusesDatabase.getNames()).map(name -> name+"("+ virusesDatabase.getShingles(name).size()+")").collect(Collectors.joining(", ")));
         }
 
         PCJ.barrier();
@@ -260,7 +260,7 @@ public class PcjMain implements StartPoint {
                             for (int shingleLength : SHINGLES_LENGTH) {
                                 String shingle = _sb.substring(index, index + shingleLength);
 
-                                if (hpvViruses.hasShingle(shingle)) {
+                                if (virusesDatabase.hasShingle(shingle)) {
                                     localShingles.add(shingle);
                                 }
                             }
@@ -293,9 +293,9 @@ public class PcjMain implements StartPoint {
 
     private String crosscheckShingles(String filename, Set<String> shingles) {
         StringBuilder result = new StringBuilder();
-        PriorityQueue<HpvViruses.CrosscheckResult> resultsPQ = hpvViruses.crosscheck(shingles);
-        for (int i = 0; (OUTPUT_HPV_COUNT <= 0 || i < OUTPUT_HPV_COUNT) && !resultsPQ.isEmpty(); ++i) {
-            HpvViruses.CrosscheckResult max = resultsPQ.poll();
+        PriorityQueue<VirusesDatabase.CrosscheckResult> resultsPQ = virusesDatabase.crosscheck(shingles);
+        for (int i = 0; (OUTPUT_VIRUS_COUNT <= 0 || i < OUTPUT_VIRUS_COUNT) && !resultsPQ.isEmpty(); ++i) {
+            VirusesDatabase.CrosscheckResult max = resultsPQ.poll();
             if (max == null) {
                 break;
             }
