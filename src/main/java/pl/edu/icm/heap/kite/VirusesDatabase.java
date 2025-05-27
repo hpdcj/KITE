@@ -39,6 +39,8 @@ public class VirusesDatabase implements Serializable {
     public void loadFromInputStream(InputStream inputStream) throws IOException {
         Map<String, Set<String>> localViruses = new HashMap<>();
         List<String> localNames = new ArrayList<>();
+        int virusCount = viruses.size();
+        ;
 
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(inputStream))) {
@@ -63,7 +65,11 @@ public class VirusesDatabase implements Serializable {
                         break;
                     }
 
-                    name = line.substring(1).strip().split("\\s+")[0];
+                    ++virusCount;
+                    name = line.substring(1).strip().split("[\\s|]", 2)[0];
+                    if (name.isEmpty()) {
+                        name = "Virus-" + virusCount;
+                    }
                 } else {
                     virus.append(line);
                 }
