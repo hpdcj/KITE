@@ -206,6 +206,15 @@ The command would produce the following information in a header:
 
 </details>
 
+### Conda
+
+The HPV-KITE is also available as conda package: `conda-forge::hpv-kite`. The application can be executed by typing: `hpv−kite sample.fq.gz`
+
+To set up HPV-KITE parameters for conda application, the `HPV_KITE_PARAMS` environmental variable can be used, e.g.
+```
+HPV_KITE_PARAMS=-DfilesGroupPattern=sample_0[0-9]
+```
+
 # Please cite
 
 When using the tool in published research, please cite:
