@@ -72,11 +72,11 @@ The release is packed as a ZIP file that has to be unpacked into a local directo
 
 To run the application, just run the following command:
 
-`java -jar hpv-kite-1.0.jar <list-of-file-paths.fq.gz>`
+`java -jar hpv-kite-1.0.2.jar <list-of-file-paths.fq.gz>`
 
 For example:
 
-`java -jar hpv-kite-1.0.jar  *.fq.gz`
+`java -jar hpv-kite-1.0.2.jar  *.fq.gz`
 
 <details><summary>Click to see command output</summary>
 It would produce output like:
@@ -132,7 +132,7 @@ For example:
 java \
   -DshingleLength=30 \
   -DoutputVirusCount=1 \
-  -jar hpv-kite-1.0.jar \
+  -jar hpv-kite-1.0.2.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
@@ -149,7 +149,7 @@ java \
   -Ddeploy=true \
   -DoutputVirusCount=1 \
   -DfilesGroupPattern='sample_0[0-9]'  \
-  -jar hpv-kite-1.0.jar \
+  -jar hpv-kite-1.0.2.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
@@ -171,7 +171,7 @@ wn8003
 It will start computation on these nodes using SSH connection (`-Ddeploy=true`).
 
 > [!NOTE]
-> Be sure that HPV-Kite _jar files_ (`hpv-kite-1.0.jar` and `pcj-5.3.3.jar`) are located in the same path as in the
+> Be sure that HPV-Kite _jar files_ (`hpv-kite-1.0.2.jar` and `pcj-5.3.3.jar`) are located in the same path as in the
 > calling machine.
 > This is normal in most of the _computer clusters_.
 > However, then you are probably using `mpiexec`, `srun` or another command to run parallel jobs, so you do not have
