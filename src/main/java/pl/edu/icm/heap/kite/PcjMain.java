@@ -69,7 +69,7 @@ public class PcjMain implements StartPoint {
                 ("-v".equals(args[0]) || "-version".equals(args[0]) || "--version".equals(args[0])
                         || "-info".equals(args[0]) || "--info".equals(args[0])
                         || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0]))) {
-            System.err.println("HPV-KITE version 1.0.3");
+            System.err.println("HPV-KITE version 1.0.4");
 
             if ("-info".equals(args[0]) || "--info".equals(args[0])
                     || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0])) {
