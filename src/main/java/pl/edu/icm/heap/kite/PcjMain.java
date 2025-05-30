@@ -32,11 +32,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+
 import org.pcj.ExecutionBuilder;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
+
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -63,6 +65,27 @@ public class PcjMain implements StartPoint {
     }
 
     public static void main(String[] args) throws IOException {
+        if (args.length > 0 &&
+                ("-v".equals(args[0]) || "-version".equals(args[0]) || "--version".equals(args[0])
+                        || "-info".equals(args[0]) || "--info".equals(args[0])
+                        || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0]))) {
+            System.err.println("HPV-KITE version 1.0.3");
+
+            if ("-info".equals(args[0]) || "--info".equals(args[0])
+                    || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0])) {
+                System.err.println("""
+                        
+                        If you use this software, please cite it using this reference:
+                          Marek Nowicki, Magdalena Mroczek, Dhananjay Mukhedkar, Piotr Bala, Ville Nikolai Pimenoff, Laila Sara Arroyo Muhr,
+                          HPV-KITE: sequence analysis software for rapid HPV genotype detection,
+                          Briefings in Bioinformatics, Volume 26, Issue 2, March 2025, bbaf155,
+                          https://doi.org/10.1093/bib/bbaf155
+                        
+                        For instructions see: https://github.com/hpdcj/HPV-KITE
+                        """);
+            }
+            args = Arrays.copyOfRange(args, 1, args.length);
+        }
         if (args.length == 0) {
             System.err.println("Give filenames (type: .fq.gz) as arguments!");
         }
@@ -165,7 +188,7 @@ public class PcjMain implements StartPoint {
                     virusesDatabase.loadFromInputStream(databaseInputStream);
                 }
             } else {
-                for (String databasePath : databasePaths.split("\\s+")) {
+                for (String databasePath : databasePaths.split(File.pathSeparator)) {
                     Instant databaseStartTime = Instant.now();
                     if (PCJ.myId() == 0) {
                         System.err.printf("[%s] Reading database file: %s...", getTimeAndDate(), databasePath);
