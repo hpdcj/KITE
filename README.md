@@ -1,7 +1,8 @@
 KITE
 ========
 
-_This application is independent of [HPV-Kite](https://github.com/HPDCJ/HPV-KITE) aiming to detect any microbiom genome from metagenome data._
+_KITE is an application aiming to detect any combination of microbe genome selected to be detected from metagenome data.
+[HPV-Kite](https://github.com/HPDCJ/HPV-KITE) in an independent application aiming to detect only HPV genomes in metagenome data._
 
 # Introduction
 
