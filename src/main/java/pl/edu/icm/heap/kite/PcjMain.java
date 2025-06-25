@@ -143,8 +143,7 @@ public class PcjMain implements StartPoint {
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
             System.err.printf("[%s] outputVirusCount = %d%n", getTimeAndDate(), OUTPUT_VIRUS_COUNT);
-            System.err.printf("[%s] databasePaths = %s%n", getTimeAndDate(),
-                    databasePaths.isEmpty() ? "<bundled>" : databasePaths);
+            System.err.printf("[%s] databasePaths = %s%n", getTimeAndDate(), databasePaths);
 
             filenames = new ConcurrentLinkedQueue<>(
                     Arrays.stream(PCJ.getProperty("files", "").split(File.pathSeparator))
@@ -180,26 +179,21 @@ public class PcjMain implements StartPoint {
         try {
             Instant databasesStartTime = Instant.now();
 
-            if (databasePaths.isEmpty()) {
-                if (PCJ.myId() == 0) {
-                    System.err.printf("[%s] Reading embedded database file%n", getTimeAndDate());
+            for (String databasePath : databasePaths.split(File.pathSeparator)) {
+                if (databasePath.isEmpty()) {
+                    continue;
                 }
-                try (InputStream databaseInputStream = VirusesDatabase.class.getResourceAsStream("/61HF7T14MD27_2024-02-23T090442.fa")) {
+
+                Instant databaseStartTime = Instant.now();
+                if (PCJ.myId() == 0) {
+                    System.err.printf("[%s] Reading database file: %s...", getTimeAndDate(), databasePath);
+                    System.err.flush();
+                }
+                try (InputStream databaseInputStream = Files.newInputStream(Path.of(databasePath))) {
                     virusesDatabase.loadFromInputStream(databaseInputStream);
                 }
-            } else {
-                for (String databasePath : databasePaths.split(File.pathSeparator)) {
-                    Instant databaseStartTime = Instant.now();
-                    if (PCJ.myId() == 0) {
-                        System.err.printf("[%s] Reading database file: %s...", getTimeAndDate(), databasePath);
-                        System.err.flush();
-                    }
-                    try (InputStream databaseInputStream = Files.newInputStream(Path.of(databasePath))) {
-                        virusesDatabase.loadFromInputStream(databaseInputStream);
-                    }
-                    if (PCJ.myId() == 0) {
-                        System.err.printf(" takes %s%n", Duration.between(databaseStartTime, Instant.now()).toNanos() / 1e9);
-                    }
+                if (PCJ.myId() == 0) {
+                    System.err.printf(" takes %s%n", Duration.between(databaseStartTime, Instant.now()).toNanos() / 1e9);
                 }
             }
 

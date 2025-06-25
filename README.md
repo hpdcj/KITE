@@ -1,25 +1,25 @@
-HPV-Kite
+KITE
 ========
+
+_This application is successor of [HPV-Kite](https://github.com/HPDCJ/HPV-KITE) application for use with various types
+of pathogens._
 
 # Introduction
 
-HPV-Kite is a Java application that detects HPV within samples. It can be used for DNA and/or RNA FASTQ files.
+KITE is a Java application that detects various pathogens within samples. It can be used for DNA and/or RNA FASTQ files.
 
 KITE stands for _K-mer Index Tversky Estimator_, as the application leverages _k-mer_ analysis combined with the
 _Tversky index_.
 
-HPV-Kite not only expedites viral detection but also maintains comparable sensitivity to existing approaches.
+KITE not only expedites viral detection but also maintains comparable sensitivity to existing approaches.
 
-The sample database of 222 HPV viruses generated 2024-02-23 from
-[The PapillomaVirus Episteme (PaVE) database](https://pave.niaid.nih.gov/)
-is embedded into the output JAR file.
-Still, it can also be any FASTA file with nucleotide sequences proceeded by descriptions of them.
+The database can also be any FASTA file(s) with nucleotide sequences proceeded by descriptions of them.
 
 # Flowchart
 
-![HPV-Kite Schema](https://github.com/hpdcj/HPV-KITE/assets/567976/f96c66b9-1bbf-4a25-8fb8-3936b7450b04)
+![KITE Schema](https://github.com/hpdcj/HPV-KITE/assets/567976/f96c66b9-1bbf-4a25-8fb8-3936b7450b04)
 
-_**Schematic view of HPV-KITE execution.** (Image from [[1]](https://doi.org/10.1093/bib/bbaf155))_
+_**Schematic view of KITE execution.** (Image from [[1]](https://doi.org/10.1093/bib/bbaf155))_
 
 # Usage
 
@@ -48,7 +48,7 @@ is adequate for your operating system.
 The application uses [the PCJ library](https://pcj.icm.edu.pl) ([GitHub repository](https://github.com/hpdcj/PCJ))
 to process files concurrently using the multinode environment. It uses PCJ in version 5.3.3.
 The jar file with the PCJ library is attached
-in a [release zip file](https://github.com/hpdcj/HPV-KITE/releases/latest).
+in a [release zip file](https://github.com/hpdcj/KITE/releases/latest).
 
 ### Gradle Build Tool (for compiling only)
 
@@ -64,7 +64,7 @@ Other useful Gradle tasks: `createDependenciesJar`, `createFatJar`.
 
 ## Release (binary version)
 
-The current version of the application is available on the [Release](https://github.com/hpdcj/HPV-KITE/releases/latest)
+The current version of the application is available on the [Release](https://github.com/hpdcj/KITE/releases/latest)
 page.
 The release is packed as a ZIP file that has to be unpacked into a local directory.
 
@@ -72,57 +72,58 @@ The release is packed as a ZIP file that has to be unpacked into a local directo
 
 To run the application, just run the following command:
 
-`java -jar hpv-kite-1.0.2.jar <list-of-file-paths.fq.gz>`
+`java -jar kite-1.1.0.jar <list-of-file-paths.fq.gz>`
 
 For example:
 
-`java -jar hpv-kite-1.0.2.jar  *.fq.gz`
+`java -jar kite-1.1.0.jar  *.fq.gz`
 
 <details><summary>Click to see command output</summary>
 It would produce output like:
 
 > ```
-> maj 22, 2024 12:33:40 PM org.pcj.internal.InternalPCJ start
+> cze 25, 2025 9:56:21 AM org.pcj.internal.InternalPCJ start
 > INFO: PCJ version 5.3.3-831a4fa (2023-10-10T14:35:07.064+0200)
-> maj 22, 2024 12:33:41 PM org.pcj.internal.InternalPCJ start
+> cze 25, 2025 9:56:22 AM org.pcj.internal.InternalPCJ start
 > INFO: Starting pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node)...
-> [2024-05-22 12:33:41,806] shingleLength = 31
-> [2024-05-22 12:33:41,807] gzipBuffer = 512
-> [2024-05-22 12:33:41,807] readerBuffer = 512
-> [2024-05-22 12:33:41,808] processingBuffer = 64
-> [2024-05-22 12:33:41,809] threadPoolSize = 8
-> [2024-05-22 12:33:41,809] outputVirusCount = 3
-> [2024-05-22 12:33:41,810] databasePaths = <bundled>
-> [2024-05-22 12:33:41,813] Files to process (3): [sample_00005.fq.gz, sample_00064.fq.gz, sample_08414_without.fq.gz]
-> [2024-05-22 12:33:41,813] filesGroupPattern = <none>
-> [2024-05-22 12:33:41,814] Reading HPV viruses file by all threads... takes 0,894718
-> [2024-05-22 12:33:42,697] Loaded 222 HPV viruses: [HPV69REF, HPV82REF, HPV71REF, HPV126REF, HPV160REF, HPV85REF, HPV83REF, HPV84REF, HPV86REF, HPV91REF, HPV89REF, HPV74REF, HPV92REF, HPV87REF, HPV43REF, HPV81REF, HPV95REF, HPV94REF, HPV90REF, HPV93REF, HPV96REF, HPV62REF, HPV67REF, HPV58REF, HPV103REF, HPV68REF, HPV97REF, HPV101REF, HPV106REF, HPV102REF, HPV107REF, HPV88REF, HPV110REF, HPV111REF, HPV109REF, HPV112REF, HPV116REF, HPV115REF, HPV108REF, HPV98REF, HPV99REF, HPV100REF, HPV104REF, HPV105REF, HPV113REF, HPV125REF, HPV150REF, HPV151REF, HPV114REF, HPV117REF, HPV118REF, HPV119REF, HPV120REF, HPV121REF, HPV122REF, HPV123REF, HPV124REF, HPV149REF, HPV130REF, HPV131REF, HPV132REF, HPV133REF, HPV134REF, HPV148REF, HPV128REF, HPV129REF, HPV159REF, HPV174REF, HPV179REF, HPV184REF, HPV127REF, HPV135REF, HPV136REF, HPV137REF, HPV138REF, HPV139REF, HPV140REF, HPV141REF, HPV142REF, HPV143REF, HPV144REF, HPV145REF, HPV146REF, HPV147REF, HPV31REF, HPV152REF, HPV155REF, HPV153REF, HPV154REF, HPV166REF, HPV169REF, HPV164REF, HPV163REF, HPV162REF, HPV161REF, HPV170REF, HPV156REF, HPV165REF, HPV16REF, HPV175REF, HPV180REF, HPV78REF, HPV168REF, HPV167REF, HPV171REF, HPV172REF, HPV173REF, HPV178REF, HPV199REF, HPV197REF, HPV200REF, HPV201REF, HPV202REF, HPV204REF, HPV176REF, HPV177REF, HPV181REF, HPV182REF, HPV183REF, HPV185REF, HPV186REF, HPV187REF, HPV188REF, HPV189REF, HPV190REF, HPV191REF, HPV192REF, HPV193REF, HPV194REF, HPV195REF, HPV196REF, HPV157REF, HPV205REF, HPV158REF, HPV209REF, HPV33REF, HPV8REF, HPV11REF, HPV5REF, HPV47REF, HPV39REF, HPV51REF, HPV42REF, HPV224REF, HPV211REF, HPV212REF, HPV213REF, HPV214REF, HPV215REF, HPV216REF, HPV223REF, HPV225REF, HPV226REF, HPV203REF, HPV219REF, HPV220REF, HPV221REF, HPV222REF, HPV210REF, HPV227REF, HPV207REF, HPV208REF, HPV229REF, HPV228REF, HPV70REF, HPV20REF, HPV21REF, HPV22REF, HPV23REF, HPV24REF, HPV28REF, HPV29REF, HPV36REF, HPV37REF, HPV38REF, HPV44REF, HPV48REF, HPV50REF, HPV60REF, HPV61REF, HPV66REF, HPV54REF, HPV206REF, HPV1REF, HPV6REF, HPV18REF, HPV2REF, HPV57REF, HPV41REF, HPV13REF, HPV4REF, HPV63REF, HPV65REF, HPV3REF, HPV7REF, HPV9REF, HPV10REF, HPV12REF, HPV14REF, HPV15REF, HPV17REF, HPV19REF, HPV25REF, HPV26REF, HPV27REF, HPV30REF, HPV32REF, HPV34REF, HPV35REF, HPV40REF, HPV45REF, HPV49REF, HPV52REF, HPV53REF, HPV56REF, HPV59REF, HPV72REF, HPV73REF, HPV75REF, HPV76REF, HPV77REF, HPV80REF]
+> [2025-06-25 09:56:22,070] shingleLength = 31
+> [2025-06-25 09:56:22,073] gzipBuffer = 512
+> [2025-06-25 09:56:22,074] readerBuffer = 512
+> [2025-06-25 09:56:22,074] processingBuffer = 64
+> [2025-06-25 09:56:22,074] threadPoolSize = 8
+> [2025-06-25 09:56:22,074] outputVirusCount = 0
+> [2025-06-25 09:56:22,074] databasePaths = hpv_222.fasta
+> [2025-06-25 09:56:22,075] Files to process (3): [sample_00005.fq.gz, sample_00064.fq.gz, sample_08414_without.fq.gz]
+> [2025-06-25 09:56:22,075] filesGroupPattern = <none>
+> [2025-06-25 09:56:22,076] Reading virus database files by all threads
+> [2025-06-25 09:56:22,077] Reading database file: hpv_222.fasta... takes 0.7487134
+> [2025-06-25 09:56:22,825] Loaded 222 viruses in 0,748713: HPV69REF(7669), HPV82REF(7839), HPV71REF(8004), HPV126REF(7295), HPV160REF(7748), HPV85REF(7781), HPV83REF(8073), HPV84REF(7917), HPV86REF(7952), HPV91REF(7935), HPV89REF(8047), HPV74REF(7856), HPV92REF(7430), HPV87REF(7968), HPV43REF(7944), HPV81REF(8039), HPV95REF(7306), HPV94REF(7850), HPV90REF(8002), HPV93REF(7419), HPV96REF(7407), HPV62REF(8061), HPV67REF(7770), HPV58REF(7793), HPV103REF(7232), HPV68REF(7791), HPV97REF(7812), HPV101REF(7228), HPV106REF(8004), HPV102REF(8041), HPV107REF(7452), HPV88REF(7295), HPV110REF(7392), HPV111REF(7355), HPV109REF(7315), HPV112REF(7196), HPV116REF(7153), HPV115REF(7445), HPV108REF(7119), HPV98REF(7435), HPV99REF(7667), HPV100REF(7349), HPV104REF(7355), HPV105REF(7636), HPV113REF(7381), HPV125REF(7778), HPV150REF(7405), HPV151REF(7355), HPV114REF(8039), HPV117REF(7864), HPV118REF(7566), HPV119REF(7220), HPV120REF(7273), HPV121REF(7311), HPV122REF(7366), HPV123REF(7298), HPV124REF(7458), HPV149REF(7302), HPV130REF(7357), HPV131REF(7151), HPV132REF(7094), HPV133REF(7327), HPV134REF(7278), HPV148REF(7133), HPV128REF(7228), HPV129REF(7188), HPV159REF(7412), HPV174REF(7328), HPV179REF(7197), HPV184REF(7293), HPV127REF(7150), HPV135REF(7262), HPV136REF(7288), HPV137REF(7205), HPV138REF(7322), HPV139REF(7329), HPV140REF(7310), HPV141REF(7345), HPV142REF(7343), HPV143REF(7684), HPV144REF(7240), HPV145REF(7344), HPV146REF(7234), HPV147REF(7193), HPV31REF(7877), HPV152REF(7449), HPV155REF(7321), HPV153REF(7209), HPV154REF(7255), HPV166REF(7181), HPV169REF(7221), HPV164REF(7202), HPV163REF(7202), HPV162REF(7183), HPV161REF(7207), HPV170REF(7386), HPV156REF(7297), HPV165REF(7098), HPV16REF(7875), HPV175REF(7195), HPV180REF(7325), HPV78REF(7799), HPV168REF(7173), HPV167REF(7197), HPV171REF(7230), HPV172REF(7172), HPV173REF(7266), HPV178REF(7283), HPV199REF(7153), HPV197REF(7247), HPV200REF(7106), HPV201REF(7260), HPV202REF(7313), HPV204REF(7196), HPV176REF(7195), HPV177REF(7902), HPV181REF(7209), HPV182REF(7385), HPV183REF(7255), HPV185REF(7413), HPV186REF(7358), HPV187REF(7237), HPV188REF(7154), HPV189REF(7287), HPV190REF(7244), HPV191REF(7333), HPV192REF(7213), HPV193REF(7317), HPV194REF(7229), HPV195REF(7537), HPV196REF(7461), HPV157REF(7123), HPV205REF(7267), HPV158REF(7161), HPV209REF(7368), HPV33REF(7826), HPV8REF(7623), HPV11REF(7900), HPV5REF(7715), HPV47REF(7695), HPV39REF(7802), HPV51REF(7777), HPV42REF(7886), HPV224REF(7202), HPV211REF(7222), HPV212REF(7177), HPV213REF(7065), HPV214REF(7326), HPV215REF(7155), HPV216REF(7202), HPV223REF(7192), HPV225REF(7289), HPV226REF(7282), HPV203REF(7341), HPV219REF(7077), HPV220REF(7350), HPV221REF(7295), HPV222REF(7244), HPV210REF(7104), HPV227REF(7410), HPV207REF(7216), HPV208REF(7252), HPV229REF(7288), HPV228REF(7246), HPV70REF(7874), HPV20REF(7705), HPV21REF(7734), HPV22REF(7337), HPV23REF(7293), HPV24REF(7421), HPV28REF(7892), HPV29REF(7885), HPV36REF(7691), HPV37REF(7390), HPV38REF(7369), HPV44REF(7802), HPV48REF(7069), HPV50REF(7153), HPV60REF(7282), HPV61REF(7958), HPV66REF(7793), HPV54REF(7728), HPV206REF(7701), HPV1REF(7785), HPV6REF(7965), HPV18REF(7826), HPV2REF(7829), HPV57REF(7830), HPV41REF(7583), HPV13REF(7849), HPV4REF(7322), HPV63REF(7317), HPV65REF(7277), HPV3REF(7789), HPV7REF(7996), HPV9REF(7403), HPV10REF(7888), HPV12REF(7642), HPV14REF(7670), HPV15REF(7382), HPV17REF(7395), HPV19REF(7630), HPV25REF(7674), HPV26REF(7824), HPV27REF(7800), HPV30REF(7821), HPV32REF(7930), HPV34REF(7687), HPV35REF(7848), HPV40REF(7878), HPV45REF(7824), HPV49REF(7529), HPV52REF(7911), HPV53REF(7828), HPV56REF(7808), HPV59REF(7865), HPV72REF(7958), HPV73REF(7669), HPV75REF(7506), HPV76REF(7518), HPV77REF(7853), HPV80REF(7396)
 > <... processing ...>
-> [2024-05-22 12:33:44,699] Total time: 2,897480500
-> maj 22, 2024 12:33:44 PM org.pcj.internal.InternalPCJ start
-> INFO: Completed pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node) after 0h 0m 2s 959ms.
+> [2025-06-24 09:56:26,699] Total time: 2,994301700
+> cze 25, 2025 9:56:27 PM org.pcj.internal.InternalPCJ start
+> INFO: Completed pl.edu.icm.heap.kite.PcjMain with 1 thread (on 1 node) after 0h 0m 3s 251ms.
 > ```
 
 </details>
 
 ## Parameters
 
-HPV-KITE has multiple parameters that can be used for the run.
+KITE has multiple parameters that can be used for the run.
 
 The following tables show the names of the parameters with their default values and meaning.
 
-| parameter name    |    default value    | description                                                                                                                                                                                                                                                                                                                                                                                           |
-|-------------------|:-------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| shingleLength     |         31          | list of comma separated values for K-mer length (e.g. `18` or `30,32`)                                                                                                                                                                                                                                                                                                                                |
-| outputVirusCount  |          0          | maximum number of viruses that match index is returned; if non-positive - return results for all viruses from the database                                                                                                                                                                                                                                                                            |
-| databasePaths     |      _bundled_      | path to the FASTA files with viruses (reference) database; if not provided, the application will use embedded database. Multiple files should be separated by system path separator (`':'` on UNIX systems, and `';'` on Microsoft Windows systems). The name of the virus is the first word from the description field (that starts with `>` in FASTA file). |
-| filesGroupPattern | "" (_empty string_) | regular expression pattern to group results from multiple input files; _empty string_ means not to group results                                                                                                                                                                                                                                                                                      |
-| nodesFile         |      nodes.txt      | file with names of the nodes which will be used to start multinode processing                                                                                                                                                                                                                                                                                                                         |
-| deploy            |        false        | flag to tell that application should use _deploy_ mechanism of the PCJ library (SSH connection) to start computation in multinode processing; if set to _false_, it is necessary to start processing files in multinode environment using available mechanisms like `srun`, `aprun`, `mpiexec`.                                                                                                       |                             
-| threadPoolSize    |  _available CPUs_   | number of threads that is processing data                                                                                                                                                                                                                                                                                                                                                             |
-| processingBuffer  |         64          | minimal size of buffer for characters to start processing data concurrently (in KB)                                                                                                                                                                                                                                                                                                                   |
-| gzipBuffer        |         512         | internal buffer size for loading GZIP files (in KB)                                                                                                                                                                                                                                                                                                                                                   |                 
-| readerBuffer      |         512         | internal buffer size for reading FASTQ files (in KB)                                                                                                                                                                                                                                                                                                                                                  |                    
+| parameter name    |    default value    | description                                                                                                                                                                                                                                                                                      |
+|-------------------|:-------------------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| shingleLength     |         31          | list of comma separated values for K-mer length (e.g. `18` or `30,32`)                                                                                                                                                                                                                           |
+| outputVirusCount  |          0          | maximum number of viruses that match index is returned; if non-positive - return results for all viruses from the database                                                                                                                                                                       |
+| databasePaths     | "" (_empty string_) | path to the FASTA files with viruses (reference) database. Multiple files should be separated by system path separator (`':'` on UNIX systems, and `';'` on Microsoft Windows systems). The name of the virus is the first word from the description field (that starts with `>` in FASTA file). |
+| filesGroupPattern | "" (_empty string_) | regular expression pattern to group results from multiple input files; _empty string_ means not to group results                                                                                                                                                                                 |
+| nodesFile         |      nodes.txt      | file with names of the nodes which will be used to start multinode processing                                                                                                                                                                                                                    |
+| deploy            |        false        | flag to tell that application should use _deploy_ mechanism of the PCJ library (SSH connection) to start computation in multinode processing; if set to _false_, it is necessary to start processing files in multinode environment using available mechanisms like `srun`, `aprun`, `mpiexec`.  |                             
+| threadPoolSize    |  _available CPUs_   | number of threads that is processing data                                                                                                                                                                                                                                                        |
+| processingBuffer  |         64          | minimal size of buffer for characters to start processing data concurrently (in KB)                                                                                                                                                                                                              |
+| gzipBuffer        |         512         | internal buffer size for loading GZIP files (in KB)                                                                                                                                                                                                                                              |                 
+| readerBuffer      |         512         | internal buffer size for reading FASTQ files (in KB)                                                                                                                                                                                                                                             |                    
 
 To modify the parameter, just give its name with the `-D` prefix (e.g. `-DshingleLength=30`) at the beginning of the
 command line just after `java`.
@@ -130,26 +131,28 @@ For example:
 
 ```bash
 java \
+  -DdatabasePaths=hpv_222.fasta \
   -DshingleLength=30 \
   -DoutputVirusCount=1 \
-  -jar hpv-kite-1.0.2.jar \
+  -jar kite-1.1.0.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
-It will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`) on the
-local machine, returning _the index_ only for the most similar HPV virus (`-DoutputHpvCount=1`) using the 30-character
+It will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`) using the database stored in `hpv_222.fasta` file (`-DdatabasePaths=hpv_222.fasta`) on the
+local machine, returning _the index_ only for the most similar viruses (`-DoutputVirusCount=1`) using the 30-character
 long shingles (_k-mers_; `-DshingleLength=30`).
 
 ### Advanced example
 
 ```bash
 java \
+  -DdatabasePaths=hpv_222.fasta \
   -DshingleLength=30 \
   -DnodesFile=all_nodes.txt \
   -Ddeploy=true \
   -DoutputVirusCount=1 \
   -DfilesGroupPattern='sample_0[0-9]'  \
-  -jar hpv-kite-1.0.2.jar \
+  -jar kite-1.1.0.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
@@ -171,7 +174,7 @@ wn8003
 It will start computation on these nodes using SSH connection (`-Ddeploy=true`).
 
 > [!NOTE]
-> Be sure that HPV-Kite _jar files_ (`hpv-kite-1.0.2.jar` and `pcj-5.3.3.jar`) are located in the same path as in the
+> Be sure that Kite _jar files_ (`kite-1.1.0.jar` and `pcj-5.3.3.jar`) are located in the same path as in the
 > calling machine.
 > This is normal in most of the _computer clusters_.
 > However, then you are probably using `mpiexec`, `srun` or another command to run parallel jobs, so you do not have
@@ -197,7 +200,7 @@ The command would produce the following information in a header:
 > [2024-05-22 13:23:57,658] processingBuffer = 64
 > [2024-05-22 13:23:57,658] threadPoolSize = 8
 > [2024-05-22 13:23:57,659] outputVirusCount = 1
-> [2024-05-22 13:23:57,659] databasePaths = <bundled>
+> [2024-05-22 13:23:57,659] databasePaths = hpv_222.fasta
 > [2024-05-22 13:23:57,661] Files to process (3): [sample_00005.fq.gz, sample_00064.fq.gz, sample_08414_without.fq.gz]
 > [2024-05-22 13:23:57,662] filesGroupPattern = sample_0[0-9]
 > [2024-05-22 13:23:57,668] File groups (2): [sample_00, sample_08]
@@ -208,15 +211,19 @@ The command would produce the following information in a header:
 
 ### Conda
 
-The HPV-KITE is also available as conda package: `conda-forge::hpv-kite`. The application can be executed by typing: `hpv−kite sample.fq.gz`
+The KITE is also available as conda package: `conda-forge::kite`. The application can be executed by typing:
+`kite sample.fq.gz`
 
-To set up HPV-KITE parameters for conda application, the `HPV_KITE_PARAMS` environmental variable can be used, e.g.
+To set up KITE parameters for conda application, the `KITE_PARAMS` environmental variable can be used, e.g.
+
 ```
-HPV_KITE_PARAMS=-DfilesGroupPattern=sample_0[0-9]
+KITE_PARAMS="-DdatabasePaths=hpv_222.fasta -DfilesGroupPattern=sample_0[0-9]"
 ```
 
 # Please cite
 
 When using the tool in published research, please cite:
 
-1. Marek Nowicki, Magdalena Mroczek, Dhananjay Mukhedkar, Piotr Bała, Ville Nikolai Pimenoff, Laila Sara Arroyo Mühr, HPV-KITE: sequence analysis software for rapid HPV genotype detection, _Briefings in Bioinformatics_, Volume 26, Issue 2, March 2025, bbaf155, https://doi.org/10.1093/bib/bbaf155
+1. Marek Nowicki, Magdalena Mroczek, Dhananjay Mukhedkar, Piotr Bała, Ville Nikolai Pimenoff, Laila Sara Arroyo Mühr,
+   HPV-KITE: sequence analysis software for rapid HPV genotype detection, _Briefings in Bioinformatics_, Volume 26,
+   Issue 2, March 2025, bbaf155, https://doi.org/10.1093/bib/bbaf155
