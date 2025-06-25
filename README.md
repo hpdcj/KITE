@@ -1,7 +1,7 @@
 KITE
 ========
 
-_KITE is an application aiming to detect any combination of microbe genome selected to be detected from metagenome data.
+_KITE is an application aiming to detect any combination of microbe genome selected to be detected from metagenome data.  
 [HPV-Kite](https://github.com/HPDCJ/HPV-KITE) in an independent application aiming to detect only HPV genomes in metagenome data._
 
 # Introduction
