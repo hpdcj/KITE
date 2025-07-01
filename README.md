@@ -208,18 +208,8 @@ The command would produce the following information in a header:
 > ```
 
 </details>
+
   
-
-# Please cite
-
-When using the tool in published research, please cite:
-
-1. Marek Nowicki, Magdalena Mroczek, Dhananjay Mukhedkar, Piotr Bała, Ville Nikolai Pimenoff, Laila Sara Arroyo Mühr,
-   HPV-KITE: sequence analysis software for rapid HPV genotype detection, _Briefings in Bioinformatics_, Volume 26,
-   Issue 2, March 2025, bbaf155, https://doi.org/10.1093/bib/bbaf155
-
-
-<!---
 ### Conda
 
 The KITE is also available as conda package: `conda-forge::kite`. The application can be executed by typing:
@@ -230,4 +220,13 @@ To set up KITE parameters for conda application, the `KITE_PARAMS` environmental
 ```
 KITE_PARAMS="-DdatabasePaths=hpv_222.fasta -DfilesGroupPattern=sample_0[0-9]"
 ```
----!>
+
+
+# Please cite
+
+When using the tool in published research, please cite:
+
+1. Marek Nowicki, Magdalena Mroczek, Dhananjay Mukhedkar, Piotr Bała, Ville Nikolai Pimenoff, Laila Sara Arroyo Mühr,
+   HPV-KITE: sequence analysis software for rapid HPV genotype detection, _Briefings in Bioinformatics_, Volume 26,
+   Issue 2, March 2025, bbaf155, https://doi.org/10.1093/bib/bbaf155
+
