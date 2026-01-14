@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -23,6 +22,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,16 +32,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-
 import org.pcj.ExecutionBuilder;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.groupingByConcurrent;
 
 @RegisterStorage
 public class PcjMain implements StartPoint {
@@ -56,7 +54,7 @@ public class PcjMain implements StartPoint {
     @SuppressWarnings({"FieldCanBeLocal"})
     private ConcurrentLinkedQueue<String> filenames;
     @SuppressWarnings({"serializable", "FieldCanBeLocal"})
-    private Map<String, ShinglesAndCount> shinglesMap;
+    private ConcurrentMap<String, ShinglesAndCount> shinglesMap;
 
     @Storage
     enum Vars {
@@ -69,7 +67,7 @@ public class PcjMain implements StartPoint {
                 ("-v".equals(args[0]) || "-version".equals(args[0]) || "--version".equals(args[0])
                         || "-info".equals(args[0]) || "--info".equals(args[0])
                         || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0]))) {
-            System.err.println("HPV-KITE version 1.0.4");
+            System.err.println("HPV-KITE version 1.1.1");
 
             if ("-info".equals(args[0]) || "--info".equals(args[0])
                     || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0])) {
@@ -159,7 +157,7 @@ public class PcjMain implements StartPoint {
                             Matcher m = filesGroupPattern.matcher(filename);
                             return m.find() ? m.group() : "";
                         })
-                        .collect(groupingBy(groupName -> groupName,
+                        .collect(groupingByConcurrent(groupName -> groupName,
                                 collectingAndThen(
                                         counting(),
                                         count -> new ShinglesAndCount(count.intValue())
@@ -252,6 +250,7 @@ public class PcjMain implements StartPoint {
                     ShinglesAndCount shinglesAndCount = shinglesMap.get(groupName);
                     shinglesAndCount.addShingles(shingles);
                     if (shinglesAndCount.decrementCount() == 0) {
+                        shinglesMap.remove(groupName);
                         return shinglesAndCount.getShingles();
                     } else {
                         return null;
@@ -348,7 +347,7 @@ public class PcjMain implements StartPoint {
         return java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS"));
     }
 
-    static class ShinglesAndCount implements Serializable {
+    static class ShinglesAndCount {
         private final Set<String> shingles;
         private final AtomicInteger count;
 
