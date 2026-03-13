@@ -1,8 +1,10 @@
 KITE
 ========
 
-_KITE is an application aiming to detect any combination of microbe genome selected to be detected from metagenome data.  
-[HPV-Kite](https://github.com/HPDCJ/HPV-KITE) in an independent application aiming to detect only HPV genomes in metagenome data._
+_KITE is an application aiming to detect any combination of microbe genome selected to be detected from metagenome
+data.  
+[HPV-Kite](https://github.com/HPDCJ/HPV-KITE) in an independent application aiming to detect only HPV genomes in
+metagenome data._
 
 # Introduction
 
@@ -72,11 +74,11 @@ The release is packed as a ZIP file that has to be unpacked into a local directo
 
 To run the application, just run the following command:
 
-`java -jar kite-1.1.1.jar <list-of-file-paths.fq.gz>`
+`java -jar kite-1.2.0.jar <list-of-file-paths.fq.gz>`
 
 For example:
 
-`java -jar kite-1.1.1.jar  *.fq.gz`
+`java -jar kite-1.2.0.jar  *.fq.gz`
 
 <details><summary>Click to see command output</summary>
 It would produce output like:
@@ -115,6 +117,8 @@ The following tables show the names of the parameters with their default values 
 | parameter name    |    default value    | description                                                                                                                                                                                                                                                                                      |
 |-------------------|:-------------------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | shingleLength     |         31          | list of comma separated values for K-mer length (e.g. `18` or `30,32`)                                                                                                                                                                                                                           |
+| outputFormat      |     PERCENTAGE      | output format of returned pathogens (can be any of: `PERCENTAGE`, `SHINGLES`, `BOTH`). For `PERCENTAGE` or `SHINGLES` the output is ordered in descending order; for `BOTH` pathogens are returned in alfabetical order.                                                                         |
+| memoryMonitor     |        false        | Inform to activate the memory utilization monitoring system                                                                                                                                                                                                                                      |
 | outputVirusCount  |          0          | maximum number of viruses that match index is returned; if non-positive - return results for all viruses from the database                                                                                                                                                                       |
 | databasePaths     | "" (_empty string_) | path to the FASTA files with viruses (reference) database. Multiple files should be separated by system path separator (`':'` on UNIX systems, and `';'` on Microsoft Windows systems). The name of the virus is the first word from the description field (that starts with `>` in FASTA file). |
 | filesGroupPattern | "" (_empty string_) | regular expression pattern to group results from multiple input files; _empty string_ means not to group results                                                                                                                                                                                 |
@@ -134,11 +138,12 @@ java \
   -DdatabasePaths=hpv_222.fasta \
   -DshingleLength=30 \
   -DoutputVirusCount=1 \
-  -jar kite-1.1.1.jar \
+  -jar kite-1.2.0.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
-It will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`) using the database stored in `hpv_222.fasta` file (`-DdatabasePaths=hpv_222.fasta`) on the
+It will start processing 3 files (`sample_00005.fq.gz`, `sample_00064.fq.gz`, and `sample_08414_without.fq.gz`) using
+the database stored in `hpv_222.fasta` file (`-DdatabasePaths=hpv_222.fasta`) on the
 local machine, returning _the index_ only for the most similar viruses (`-DoutputVirusCount=1`) using the 30-character
 long shingles (_k-mers_; `-DshingleLength=30`).
 
@@ -152,7 +157,7 @@ java \
   -Ddeploy=true \
   -DoutputVirusCount=1 \
   -DfilesGroupPattern='sample_0[0-9]'  \
-  -jar kite-1.1.1.jar \
+  -jar kite-1.2.0.jar \
   sample_00005.fq.gz sample_00064.fq.gz sample_08414_without.fq.gz
 ```
 
@@ -174,7 +179,7 @@ wn8003
 It will start computation on these nodes using SSH connection (`-Ddeploy=true`).
 
 > [!NOTE]
-> Be sure that Kite _jar files_ (`kite-1.1.1.jar` and `pcj-5.3.3.jar`) are located in the same path as in the
+> Be sure that Kite _jar files_ (`kite-1.2.0.jar` and `pcj-5.3.4.jar`) are located in the same path as in the
 > calling machine.
 > This is normal in most of the _computer clusters_.
 > However, then you are probably using `mpiexec`, `srun` or another command to run parallel jobs, so you do not have
@@ -209,7 +214,6 @@ The command would produce the following information in a header:
 
 </details>
 
-  
 ### Conda
 
 The KITE is also available as conda package: `conda-forge::kite`. The application can be executed by typing:
@@ -220,7 +224,6 @@ To set up KITE parameters for conda application, the `KITE_PARAMS` environmental
 ```
 KITE_PARAMS="-DdatabasePaths=hpv_222.fasta -DfilesGroupPattern=sample_0[0-9]"
 ```
-
 
 # Please cite
 
