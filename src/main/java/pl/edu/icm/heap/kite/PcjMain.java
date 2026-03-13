@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -14,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-import org.pcj.ExecutionBuilder;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -48,6 +49,7 @@ public class PcjMain implements StartPoint {
     private int READER_BUFFER_KB;
     private int PROCESSING_BUFFER_KB;
     private int OUTPUT_VIRUS_COUNT;
+    private OutputFormat OUTPUT_FORMAT;
     private Pattern filesGroupPattern;
     private ExecutorService executor;
     private VirusesDatabase virusesDatabase;
@@ -56,61 +58,16 @@ public class PcjMain implements StartPoint {
     @SuppressWarnings({"serializable", "FieldCanBeLocal"})
     private ConcurrentMap<String, ShinglesAndCount> shinglesMap;
 
+    enum OutputFormat {
+        PERCENTAGE,
+        SHINGLES,
+        BOTH
+    }
+
     @Storage
     enum Vars {
         filenames,
         shinglesMap
-    }
-
-    public static void main(String[] args) throws IOException {
-        if (args.length > 0 &&
-                ("-v".equals(args[0]) || "-version".equals(args[0]) || "--version".equals(args[0])
-                        || "-info".equals(args[0]) || "--info".equals(args[0])
-                        || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0]))) {
-            System.err.println("HPV-KITE version 1.1.1");
-
-            if ("-info".equals(args[0]) || "--info".equals(args[0])
-                    || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0])) {
-                System.err.println("""
-                        
-                        If you use this software, please cite it using this reference:
-                          Marek Nowicki, Magdalena Mroczek, Dhananjay Mukhedkar, Piotr Bala, Ville Nikolai Pimenoff, Laila Sara Arroyo Muhr,
-                          HPV-KITE: sequence analysis software for rapid HPV genotype detection,
-                          Briefings in Bioinformatics, Volume 26, Issue 2, March 2025, bbaf155,
-                          https://doi.org/10.1093/bib/bbaf155
-                        
-                        For instructions see: https://github.com/hpdcj/HPV-KITE
-                        """);
-            }
-            args = Arrays.copyOfRange(args, 1, args.length);
-        }
-        if (args.length == 0) {
-            System.err.println("Give filenames (type: .fq.gz) as arguments!");
-        }
-
-        ExecutionBuilder builder = PCJ.executionBuilder(PcjMain.class)
-                .addProperty("shingleLength", System.getProperty("shingleLength", "" + (31)))
-                .addProperty("gzipBuffer", System.getProperty("gzipBuffer", "" + (512)))
-                .addProperty("readerBuffer", System.getProperty("readerBuffer", "" + (512)))
-                .addProperty("processingBuffer", System.getProperty("processingBuffer", "" + (64)))
-                .addProperty("threadPoolSize", System.getProperty("threadPoolSize", "" + Runtime.getRuntime().availableProcessors()))
-                .addProperty("outputVirusCount", System.getProperty("outputVirusCount",
-                        System.getProperty("outputHpvCount", "" + (0))))
-                .addProperty("databasePaths", System.getProperty("databasePaths",
-                        System.getProperty("databasePath", System.getProperty("hpvVirusesPath", ""))))
-                .addProperty("filesGroupPattern", System.getProperty("filesGroupPattern", ""))
-                .addProperty("files", String.join(File.pathSeparator, args));
-
-        File nodesFile = new File(System.getProperty("nodesFile", "nodes.txt"));
-        if (nodesFile.isFile()) {
-            builder.addNodes(nodesFile);
-        }
-
-        if (Boolean.parseBoolean(System.getProperty("deploy", "false"))) {
-            builder.deploy();
-        } else {
-            builder.start();
-        }
     }
 
     @Override
@@ -125,6 +82,14 @@ public class PcjMain implements StartPoint {
         GZIP_BUFFER_KB = Integer.parseInt(PCJ.getProperty("gzipBuffer"));
         READER_BUFFER_KB = Integer.parseInt(PCJ.getProperty("readerBuffer"));
         PROCESSING_BUFFER_KB = Integer.parseInt(PCJ.getProperty("processingBuffer"));
+        String outputFormat = PCJ.getProperty("outputFormat");
+        if (!outputFormat.isBlank()) {
+            try {
+                OUTPUT_FORMAT = OutputFormat.valueOf(outputFormat.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                OUTPUT_FORMAT = OutputFormat.PERCENTAGE;
+            }
+        }
         OUTPUT_VIRUS_COUNT = Integer.parseInt(PCJ.getProperty("outputVirusCount"));
         int threadPoolSize = Integer.parseInt(PCJ.getProperty("threadPoolSize"));
         String databasePaths = PCJ.getProperty("databasePaths");
@@ -134,12 +99,19 @@ public class PcjMain implements StartPoint {
             filesGroupPattern = Pattern.compile(filesGroupPatternString);
         }
 
+        boolean memoryMonitor = Boolean.parseBoolean(PCJ.getProperty("memoryMonitor", "false"));
+        if (memoryMonitor) {
+            Utils.startMemoryMonitor();
+        }
+
         if (PCJ.myId() == 0) {
             System.err.printf("[%s] shingleLength = %s%n", getTimeAndDate(), Utils.shinglesLengthToString(SHINGLES_LENGTH));
             System.err.printf("[%s] gzipBuffer = %d%n", getTimeAndDate(), GZIP_BUFFER_KB);
             System.err.printf("[%s] readerBuffer = %d%n", getTimeAndDate(), READER_BUFFER_KB);
             System.err.printf("[%s] processingBuffer = %d%n", getTimeAndDate(), PROCESSING_BUFFER_KB);
+            System.err.printf("[%s] memoryMonitor = %s%n", getTimeAndDate(), memoryMonitor);
             System.err.printf("[%s] threadPoolSize = %d%n", getTimeAndDate(), threadPoolSize);
+            System.err.printf("[%s] outputFormat = %s%n", getTimeAndDate(), OUTPUT_FORMAT);
             System.err.printf("[%s] outputVirusCount = %d%n", getTimeAndDate(), OUTPUT_VIRUS_COUNT);
             System.err.printf("[%s] databasePaths = %s%n", getTimeAndDate(), databasePaths);
 
@@ -331,14 +303,42 @@ public class PcjMain implements StartPoint {
     }
 
     private String crosscheckShingles(String filename, Set<String> shingles) {
+        List<VirusesDatabase.CrosscheckResult> crosscheckResults = virusesDatabase.crosscheck(shingles);
+
+        Comparator<VirusesDatabase.CrosscheckResult> crosscheckResultComparator = switch (OUTPUT_FORMAT) {
+            case PERCENTAGE -> (Comparator<VirusesDatabase.CrosscheckResult> & Serializable) (v1, v2) -> {
+                int value = Double.compare(v1.percentage(), v2.percentage());
+                if (value == 0) {
+                    return v1.name().compareTo(v2.name());
+                }
+                return -value;
+            };
+            case SHINGLES -> (Comparator<VirusesDatabase.CrosscheckResult> & Serializable) (v1, v2) -> {
+                int value = Double.compare(v1.shingles(), v2.shingles());
+                if (value == 0) {
+                    return v1.name().compareTo(v2.name());
+                }
+                return -value;
+            };
+            case BOTH ->
+                    (Comparator<VirusesDatabase.CrosscheckResult> & Serializable) (v1, v2) -> v1.name().compareTo(v2.name());
+        };
+
+        PriorityQueue<VirusesDatabase.CrosscheckResult> resultsPQ = new PriorityQueue<>(crosscheckResultComparator);
+        resultsPQ.addAll(crosscheckResults);
+
         StringBuilder result = new StringBuilder();
-        PriorityQueue<VirusesDatabase.CrosscheckResult> resultsPQ = virusesDatabase.crosscheck(shingles);
         for (int i = 0; (OUTPUT_VIRUS_COUNT <= 0 || i < OUTPUT_VIRUS_COUNT) && !resultsPQ.isEmpty(); ++i) {
             VirusesDatabase.CrosscheckResult max = resultsPQ.poll();
             if (max == null) {
                 break;
             }
-            result.append(String.format("%-10s\t%.6f\t", max.name(), max.value()));
+            String resultString = switch (OUTPUT_FORMAT) {
+                case PERCENTAGE -> String.format("%s\t%.6f\t", max.name(), max.percentage());
+                case SHINGLES -> String.format("%s\t%d\t", max.name(), max.shingles());
+                case BOTH -> String.format("%s\t%.6f\t%d\t", max.name(), max.percentage(), max.shingles());
+            };
+            result.append(resultString);
         }
         return String.format("%s%s", result, filename);
     }
@@ -348,6 +348,7 @@ public class PcjMain implements StartPoint {
     }
 
     static class ShinglesAndCount {
+
         private final Set<String> shingles;
         private final AtomicInteger count;
 

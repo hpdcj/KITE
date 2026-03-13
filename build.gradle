@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'pl.edu.icm.heap.kite'
-version = '1.1.1'
+version = '1.2.0'
 
 repositories {
     mavenCentral()
@@ -15,15 +15,15 @@ java {
 }
 
 dependencies {
-    implementation 'pl.edu.icm.pcj:pcj:5.3.3'
-    annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.3'
+    implementation 'pl.edu.icm.pcj:pcj:5.3.4'
+    annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.4'
 }
 
 tasks.withType(Jar).configureEach {
     manifest {
         attributes 'Implementation-Title': project.name
         attributes 'Implementation-Version': version
-        attributes 'Main-Class': 'pl.edu.icm.heap.kite.PcjMain'
+        attributes 'Main-Class': 'pl.edu.icm.heap.kite.Main'
     }
 }
 

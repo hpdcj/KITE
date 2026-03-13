@@ -101,29 +101,21 @@ public class VirusesDatabase implements Serializable {
         return Collections.unmodifiableSet(viruses.get(virusName));
     }
 
-    public PriorityQueue<CrosscheckResult> crosscheck(Set<String> shingles) {
-        Comparator<CrosscheckResult> crosscheckResultComparator
-                = (Comparator<CrosscheckResult> & Serializable) (v1, v2) -> {
-            int value = Double.compare(v1.value(), v2.value());
-            if (value == 0) {
-                return v1.name().compareTo(v2.name());
-            }
-            return -value;
-        };
-        PriorityQueue<CrosscheckResult> priorityQueue = new PriorityQueue<>(crosscheckResultComparator);
+    public List<CrosscheckResult> crosscheck(Set<String> shingles) {
+        List<CrosscheckResult> resultList = new ArrayList<>(names.size());
         for (String name : names) {
             Set<String> virusShingles = viruses.get(name);
-            double index = calculateIndex(shingles, virusShingles);
-            priorityQueue.add(new CrosscheckResult(name, index));
+            long shinglesCount = calculateIntersection(shingles, virusShingles);
+            double index = (double) shinglesCount / virusShingles.size();
+            resultList.add(new CrosscheckResult(name, shinglesCount, index));
         }
-        return priorityQueue;
+        return resultList;
     }
 
-    public static double calculateIndex(Set<String> shingles, Set<String> virusShingles) {
-        long intersectionSize = shingles.stream().filter(virusShingles::contains).count();
-        return (double) intersectionSize / virusShingles.size();
+    public static long calculateIntersection(Set<String> shingles, Set<String> virusShingles) {
+        return shingles.stream().filter(virusShingles::contains).count();
     }
 
-    public record CrosscheckResult(String name, double value) implements Serializable {
+    public record CrosscheckResult(String name, long shingles, double percentage) implements Serializable {
     }
 }
