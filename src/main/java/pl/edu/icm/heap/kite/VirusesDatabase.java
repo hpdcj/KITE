@@ -10,14 +10,14 @@ import java.util.*;
 
 public class VirusesDatabase implements Serializable {
     private final int[] shinglesLength;
-    private final List<String> names;
+    private final LinkedHashSet<String> names;
     private final Map<String, Set<String>> viruses;
     transient private final Set<String> superset;
 
     public VirusesDatabase(int[] shinglesLength) {
         this.shinglesLength = shinglesLength;
 
-        names = new ArrayList<>();
+        names = new LinkedHashSet<>();
         viruses = new HashMap<>();
         superset = new HashSet<>();
     }
@@ -38,9 +38,8 @@ public class VirusesDatabase implements Serializable {
 
     public void loadFromInputStream(InputStream inputStream) throws IOException {
         Map<String, Set<String>> localViruses = new HashMap<>();
-        List<String> localNames = new ArrayList<>();
+        LinkedHashSet<String> localNames = new LinkedHashSet<>();
         int virusCount = viruses.size();
-        ;
 
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(inputStream))) {
@@ -57,7 +56,10 @@ public class VirusesDatabase implements Serializable {
                             }
                         }
                         localNames.add(name);
-                        localViruses.put(name, Collections.unmodifiableSet(generator));
+                        localViruses.merge(name, generator, (s1, s2) -> {
+                            s1.addAll(s2);
+                            return s1;
+                        });
 
                         virus.setLength(0);
                     }
@@ -76,10 +78,11 @@ public class VirusesDatabase implements Serializable {
             }
         }
 
-        viruses.putAll(localViruses);
+        for (Map.Entry<String, Set<String>> entry : localViruses.entrySet()) {
+            viruses.merge(entry.getKey(), entry.getValue(), (s1,s2)->{s1.addAll(s2); return s1;});
+        }
         names.addAll(localNames);
         localViruses.values().forEach(superset::addAll);
-
     }
 
     public int count() {

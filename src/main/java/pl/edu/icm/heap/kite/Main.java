@@ -12,7 +12,7 @@ public class Main {
                 ("-v".equals(args[0]) || "-version".equals(args[0]) || "--version".equals(args[0])
                         || "-info".equals(args[0]) || "--info".equals(args[0])
                         || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0]))) {
-            System.err.println("KITE version 1.2.0");
+            System.err.println("KITE version 1.3.0");
 
             if ("-info".equals(args[0]) || "--info".equals(args[0])
                     || "-h".equals(args[0]) || "-help".equals(args[0]) || "--help".equals(args[0])) {
@@ -24,7 +24,7 @@ public class Main {
                           Briefings in Bioinformatics, Volume 26, Issue 2, March 2025, bbaf155,
                           https://doi.org/10.1093/bib/bbaf155
                         
-                        For instructions see: https://github.com/hpdcj/HPV-KITE
+                        For instructions see: https://github.com/hpdcj/KITE
                         """);
             }
             args = Arrays.copyOfRange(args, 1, args.length);
