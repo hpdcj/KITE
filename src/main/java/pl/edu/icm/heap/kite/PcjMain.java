@@ -257,15 +257,20 @@ public class PcjMain implements StartPoint {
             Set<String> shingles = ConcurrentHashMap.newKeySet();
 
             input.readLine(); // skip line
-//            StringBuilder sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
+            StringBuilder sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
             while (true) {
                 String line = input.readLine();
                 if (line != null) {
+                    sb.append(line);
+                    sb.append('|');
+                }
+                if (line == null || sb.length() >= PROCESSING_BUFFER_KB * 1024) {
+                    StringBuilder _sb = sb;
                     shinglesFutures.add(executor.submit(() -> {
                         Set<String> localShingles = new HashSet<>();
-                        for (int index = 0; index <= line.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1]; ++index) {
+                        for (int index = 0; index <= _sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1]; ++index) {
                             for (int shingleLength : SHINGLES_LENGTH) {
-                                String shingle = line.substring(index, index + shingleLength);
+                                String shingle = _sb.substring(index, index + shingleLength);
 
                                 if (virusesDatabase.hasShingle(shingle)) {
                                     localShingles.add(shingle);
@@ -275,8 +280,12 @@ public class PcjMain implements StartPoint {
 
                         shingles.addAll(localShingles);
                     }));
-                } else {
+                    if (line == null) {
                         break;
+                    }
+                    String lastChars = sb.substring(sb.length() - SHINGLES_LENGTH[SHINGLES_LENGTH.length - 1] + 1);
+                    sb = new StringBuilder((PROCESSING_BUFFER_KB + 1) * 1024);
+                    sb.append(lastChars);
                 }
                 input.readLine(); // skip line
                 input.readLine(); // skip line
